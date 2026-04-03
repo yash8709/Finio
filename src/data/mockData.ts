@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import type { Transaction, CategoryType } from '../types'
+import type { Transaction, Category } from '../types'
 
 // ─── Seed for deterministic data ─────────────────────────
 faker.seed(42)
@@ -110,12 +110,12 @@ const INCOME_DESCRIPTIONS: Record<string, string[]> = {
 }
 
 // ─── Expense categories pool ─────────────────────────────
-const EXPENSE_CATEGORIES: CategoryType[] = [
+const EXPENSE_CATEGORIES: Category[] = [
   'Food & Dining', 'Transport', 'Entertainment',
   'Shopping', 'Bills & Utilities', 'Health', 'Subscriptions',
 ]
 
-const INCOME_CATEGORIES: CategoryType[] = ['Salary', 'Freelance']
+const INCOME_CATEGORIES: Category[] = ['Salary', 'Freelance']
 
 // ─── Generator ───────────────────────────────────────────
 function generateTransaction(
@@ -123,7 +123,7 @@ function generateTransaction(
   startDate: Date,
   endDate: Date,
   forceType?: 'income' | 'expense',
-  forceCategory?: CategoryType,
+  forceCategory?: Category,
   forceAmountMultiplier?: number,
 ): Transaction {
   const isIncome = forceType
@@ -132,7 +132,7 @@ function generateTransaction(
 
   const type: 'income' | 'expense' = isIncome ? 'income' : 'expense'
 
-  const category: CategoryType = forceCategory
+  const category: Category = forceCategory
     ? forceCategory
     : isIncome
       ? faker.helpers.arrayElement(INCOME_CATEGORIES)
@@ -160,7 +160,10 @@ function generateTransaction(
     amount = Math.round(amount * forceAmountMultiplier)
   }
 
-  const date = faker.date.between({ from: startDate, to: endDate })
+  const date = faker.date.between({ 
+    from: new Date(Date.now() - 180*24*60*60*1000), 
+    to: new Date() 
+  })
 
   return {
     id: faker.string.uuid(),
@@ -204,10 +207,43 @@ transactions.push(
   generateTransaction(86, sixMonthsAgo, now, 'expense', 'Health', 3),
 )
 
-// Fill remaining 3 normal transactions
+// Fill remaining normal transactions
 for (let i = 87; i < 90; i++) {
   transactions.push(generateTransaction(i, sixMonthsAgo, now))
 }
+
+// ─── Force Current Month Data ────────────────────────────
+// Since it's early in the month, randomly generated data over 180 days 
+// might miss the current month. We inject a guaranteed salary and some expenses.
+transactions.push({
+  id: faker.string.uuid(),
+  date: new Date(now.getFullYear(), now.getMonth(), 1, 10, 0), // 1st of current month
+  amount: 85000,
+  category: 'Salary',
+  type: 'income',
+  merchant: 'HDFC Salary Credit',
+  description: 'Monthly salary credit',
+})
+
+transactions.push({
+  id: faker.string.uuid(),
+  date: new Date(now.getFullYear(), now.getMonth(), 2, 14, 30), // 2nd of current month
+  amount: 3200,
+  category: 'Food & Dining',
+  type: 'expense',
+  merchant: 'Swiggy',
+  description: 'Weekend lunch order',
+})
+
+transactions.push({
+  id: faker.string.uuid(),
+  date: new Date(now.getFullYear(), now.getMonth(), 2, 18, 15), // 2nd of current month
+  amount: 1500,
+  category: 'Transport',
+  type: 'expense',
+  merchant: 'Uber India',
+  description: 'Cab to airport',
+})
 
 // Sort by date descending (most recent first)
 transactions.sort((a, b) => b.date.getTime() - a.date.getTime())

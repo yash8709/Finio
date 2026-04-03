@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Transaction, FilterState, CategoryType, SortField, SortOrder } from '../types'
+import type { Transaction, FilterState, Category, SortField, SortOrder } from '../types'
 import { mockTransactions } from '../data/mockData'
 
 interface TransactionState {
@@ -20,7 +20,7 @@ interface TransactionActions {
 
 const DEFAULT_FILTERS: FilterState = {
   search: '',
-  category: 'all' as CategoryType | 'all',
+  category: 'all' as Category | 'all',
   type: 'all' as 'income' | 'expense' | 'all',
   dateFrom: '',
   dateTo: '',

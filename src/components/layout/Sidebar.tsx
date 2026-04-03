@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -9,9 +10,10 @@ import {
   Sun,
   Users,
 } from 'lucide-react'
-import { useUIStore } from '../../store/uiStore'
-import { MOCK_USER } from '../../data/mockData'
 import { Avatar } from '../ui/Avatar'
+import { useUIStore } from '../../store/uiStore'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { MOCK_USER } from '../../data/mockData'
 
 interface NavItem {
   label: string
@@ -26,27 +28,78 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function Sidebar() {
-  const location = useLocation()
-  const isSidebarExpanded = useUIStore((s) => s.isSidebarExpanded)
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar)
-  const role = useUIStore((s) => s.role)
-  const setRole = useUIStore((s) => s.setRole)
-  const isDarkMode = useUIStore((s) => s.isDarkMode)
-  const toggleDarkMode = useUIStore((s) => s.toggleDarkMode)
+  const { isSidebarExpanded, toggleSidebar, setSidebarExpanded } = useUIStore()
+
+  const isTablet = useMediaQuery('(max-width: 1024px)')
+  const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // Collapse sidebar on tablet, expand on desktop
+  useEffect(() => {
+    if (isTablet) {
+      setSidebarExpanded(false)
+    } else {
+      setSidebarExpanded(true)
+    }
+  }, [isTablet, setSidebarExpanded])
+
+  // Mobile sidebar is an overlay
+  if (isMobile) {
+    return (
+      <>
+        {isSidebarExpanded && (
+          <div
+            className="fixed inset-0 bg-black/60 z-30"
+            onClick={toggleSidebar}
+          />
+        )}
+        <aside
+          className={`
+            fixed top-0 left-0 h-screen z-40
+            glass-sidebar
+            flex flex-col
+            transition-transform duration-300 ease-out
+            ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}
+            w-60
+          `}
+        >
+          {/* Sidebar content is the same, just wrapped */}
+          <SidebarContent />
+        </aside>
+      </>
+    )
+  }
 
   return (
     <aside
       className={`
         fixed top-0 left-0 h-screen z-30
-        bg-[#0a0f1e]/80 backdrop-blur-xl
-        border-r border-white/6
+        glass-sidebar
         flex flex-col
         transition-all duration-300 ease-out
         ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}
       `}
     >
+      <SidebarContent />
+    </aside>
+  )
+}
+
+// Extracted content to reuse for mobile/desktop
+function SidebarContent() {
+  const location = useLocation()
+  const {
+    isSidebarExpanded,
+    toggleSidebar,
+    role,
+    setRole,
+    isDarkMode,
+    toggleDarkMode,
+  } = useUIStore()
+
+  return (
+    <>
       {/* ─── Logo + Branding ──────────────────────────── */}
-      <div className="p-4 flex items-center gap-3 border-b border-white/6">
+      <div className="p-4 flex items-center gap-3 border-b border-white/6 h-16">
         <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
           <Sparkles size={18} className="text-white" />
         </div>
@@ -61,9 +114,9 @@ export function Sidebar() {
       </div>
 
       {/* ─── Navigation ───────────────────────────────── */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.path
+          const isActive = location.pathname.startsWith(item.path)
           const Icon = item.icon
 
           return (
@@ -71,35 +124,27 @@ export function Sidebar() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl
-                transition-all duration-200 group relative
-                ${isActive
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                flex items-center gap-3 px-3 py-2.5 rounded-lg mx-2
+                transition-colors duration-200 group relative
+                border-l-[3px]
+                ${
+                  isActive
+                    ? 'bg-emerald-500/10 border-emerald-500 text-white'
+                    : 'text-gray-500 hover:bg-white/[0.04] hover:text-gray-300 border-transparent'
                 }
               `}
             >
-              {/* Active indicator bar */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-emerald-400 rounded-r-full" />
-              )}
-
-              <Icon size={20} className="shrink-0" />
+              <Icon
+                size={20}
+                className={`shrink-0 ${isActive ? 'text-emerald-400' : ''}`}
+              />
 
               {isSidebarExpanded && (
                 <span className="text-sm font-medium">{item.label}</span>
               )}
 
-              {/* Tooltip when collapsed */}
               {!isSidebarExpanded && (
-                <div className="
-                  absolute left-full ml-2 px-2.5 py-1 rounded-lg
-                  bg-[#1a1f2d] text-white text-xs font-medium
-                  opacity-0 group-hover:opacity-100
-                  pointer-events-none transition-opacity duration-200
-                  whitespace-nowrap shadow-lg shadow-black/40
-                  border border-white/10
-                ">
+                <div className="absolute left-full rounded-md px-2 py-1 ml-6 bg-emerald-950 text-emerald-300 text-sm invisible opacity-20 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0">
                   {item.label}
                 </div>
               )}
@@ -108,73 +153,83 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* ─── Bottom section ───────────────────────────── */}
-      <div className="border-t border-white/6 p-3 space-y-1">
-        {/* Admin console badge */}
-        {isSidebarExpanded && role === 'admin' && (
-          <div className="mb-2 px-3 py-2 rounded-xl bg-white/4">
-            <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1.5">
-              Admin Console
-            </p>
-            <div className="bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg text-center">
-              {MOCK_USER.id}
-            </div>
+      {/* ─── Sidebar Footer ─────────────────────────────── */}
+      <div className="p-2 border-t border-white/6">
+        {/* ─── Theme Toggle ─────────────────────────────── */}
+        <div className="flex items-center justify-center p-2">
+          <div className="p-1 rounded-lg bg-white/5 flex text-gray-400">
+            <button
+              onClick={() => toggleDarkMode()}
+              className={`p-1.5 rounded-md ${
+                !isDarkMode ? 'bg-white/10 text-white' : ''
+              }`}
+            >
+              <Sun size={16} />
+            </button>
+            <button
+              onClick={() => toggleDarkMode()}
+              className={`p-1.5 rounded-md ${
+                isDarkMode ? 'bg-white/10 text-white' : ''
+              }`}
+            >
+              <Moon size={16} />
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Role toggle */}
-        <button
-          onClick={() => setRole(role === 'admin' ? 'viewer' : 'admin')}
-          className="
-            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-            text-white/50 hover:text-white/80 hover:bg-white/5
-            transition-all duration-200 cursor-pointer
-          "
+        {/* ─── Role Switcher ────────────────────────────── */}
+        <div className="flex items-center justify-center p-2">
+          <div className="p-1 rounded-lg bg-white/5 flex text-gray-400">
+            <button
+              onClick={() => setRole('admin')}
+              className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 ${
+                role === 'admin' ? 'bg-white/10 text-white' : ''
+              }`}
+            >
+              <Users size={14} /> Admin
+            </button>
+            <button
+              onClick={() => setRole('viewer')}
+              className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 ${
+                role === 'viewer' ? 'bg-white/10 text-white' : ''
+              }`}
+            >
+              <Users size={14} /> Viewer
+            </button>
+          </div>
+        </div>
+
+        {/* ─── User Profile ─────────────────────────────── */}
+        <div
+          className={`
+            p-2 flex items-center gap-3
+            ${isSidebarExpanded ? 'bg-white/5 rounded-xl' : ''}
+          `}
         >
-          <Users size={20} className="shrink-0" />
+          <Avatar
+            name={MOCK_USER.name}
+            size="md"
+          />
           {isSidebarExpanded && (
-            <span className="text-sm font-medium">Role Toggle</span>
+            <div className="overflow-hidden">
+              <p className="text-sm font-semibold text-white truncate">
+                {MOCK_USER.name}
+              </p>
+              <p className="text-xs text-gray-400 truncate">
+                {MOCK_USER.email}
+              </p>
+            </div>
           )}
-        </button>
+        </div>
 
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className="
-            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-            text-white/50 hover:text-white/80 hover:bg-white/5
-            transition-all duration-200 cursor-pointer
-          "
-        >
-          {isDarkMode ? (
-            <Moon size={20} className="shrink-0" />
-          ) : (
-            <Sun size={20} className="shrink-0" />
-          )}
-          {isSidebarExpanded && (
-            <span className="text-sm font-medium">Dark Mode</span>
-          )}
-        </button>
-
-        {/* Collapse toggle */}
+        {/* ─── Collapse Toggle ──────────────────────────── */}
         <button
           onClick={toggleSidebar}
-          className="
-            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-            text-white/50 hover:text-white/80 hover:bg-white/5
-            transition-all duration-200 cursor-pointer
-          "
+          className="absolute -right-3 top-16 p-1.5 rounded-full bg-emerald-500/50 hover:bg-emerald-500 text-white"
         >
-          {isSidebarExpanded ? (
-            <ChevronLeft size={20} className="shrink-0" />
-          ) : (
-            <ChevronRight size={20} className="shrink-0" />
-          )}
-          {isSidebarExpanded && (
-            <span className="text-sm font-medium">Collapse</span>
-          )}
+          {isSidebarExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
       </div>
-    </aside>
+    </>
   )
 }

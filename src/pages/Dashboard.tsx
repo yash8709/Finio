@@ -1,238 +1,236 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Wallet,
+  Wallet as WalletIcon,
   TrendingUp,
   TrendingDown,
   PiggyBank,
   ArrowRight,
 } from 'lucide-react'
-import { GlassCard } from '../components/ui/GlassCard'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { NumberTicker } from '../components/ui/NumberTicker'
 import { AreaChart } from '../components/charts/AreaChart'
 import { DonutChart } from '../components/charts/DonutChart'
 import { useInsights } from '../hooks/useInsights'
-import { useTransactionStore } from '../store/transactionStore'
-import { formatINR, formatDate } from '../utils/formatters'
+import { formatINR } from '../utils/formatters'
 import type { Transaction } from '../types'
+import { useTransactionStore } from '../store/transactionStore'
+import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns'
 
 // ─── Animation variants ─────────────────────────────────
 const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -5, transition: { duration: 0.15 } },
 }
 
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.07,
-    },
-  },
+const rowVariants = {
+  hidden: { opacity: 0, x: -8 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.2, ease: 'easeOut' } },
 }
 
-const cardVariant = {
-  initial: { opacity: 0, y: 20, scale: 0.98 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
-  },
-}
-
-const listItemVariant = {
-  initial: { opacity: 0, x: -8 },
-  animate: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.2, ease: 'easeOut' },
-  },
-}
-
-// ─── Summary Card Sub-Component ──────────────────────────
-interface SummaryCardProps {
-  label: string
-  amount: number
-  change: string
-  changePositive: boolean
-  icon: React.ElementType
-  iconBg: string
-  iconColor: string
-  subtitle?: string
-  progressBar?: { value: number; color: string }
-  isCurrency?: boolean
-}
-
-function SummaryCard({
-  label,
-  amount,
-  change,
-  changePositive,
-  icon: Icon,
-  iconBg,
-  iconColor,
-  subtitle,
-  progressBar,
-  isCurrency = true,
-}: SummaryCardProps) {
-  return (
-    <GlassCard hoverable className="p-5">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}>
-          <Icon size={20} className={iconColor} />
-        </div>
-        <span
-          className={`text-xs font-mono font-medium px-2 py-0.5 rounded-full ${
-            changePositive
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-rose-500/10 text-rose-400'
-          }`}
-        >
-          {change}
-        </span>
-      </div>
-
-      <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1">{label}</p>
-      <p className="text-2xl font-mono font-bold text-white">
-        {isCurrency ? (
-          <NumberTicker value={amount} formatter={(v) => formatINR(v)} />
-        ) : (
-          <NumberTicker value={amount} suffix="%" />
-        )}
-      </p>
-
-      {subtitle && (
-        <p className="text-xs text-white/30 mt-1">{subtitle}</p>
-      )}
-
-      {progressBar && (
-        <div className="mt-3">
-          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(progressBar.value, 100)}%` }}
-              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-              style={{ backgroundColor: progressBar.color }}
-            />
-          </div>
-        </div>
-      )}
-    </GlassCard>
-  )
-}
-
-// ─── Transaction Row Sub-Component ───────────────────────
-function TransactionRow({ transaction }: { transaction: Transaction }) {
-  const isIncome = transaction.type === 'income'
-
-  return (
-    <div className="flex items-center gap-4 py-3 group hover:bg-white/[0.02] rounded-xl px-2 -mx-2 transition-colors duration-150">
-      <Avatar name={transaction.merchant} size="md" />
-
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white truncate">{transaction.merchant}</p>
-        <p className="text-xs text-white/30 mt-0.5">
-          {formatDate(transaction.date, 'dd MMM, yyyy')} • {formatDate(transaction.date, 'hh:mm a')}
-        </p>
-      </div>
-
-      <Badge
-        label={transaction.category.split(' ')[0]}
-        category={transaction.category}
-        size="sm"
-      />
-
-      <p className={`font-mono font-semibold text-sm min-w-[100px] text-right ${
-        isIncome ? 'text-emerald-400' : 'text-white'
-      }`}>
-        {isIncome ? '+' : '-'} {formatINR(transaction.amount)}
-      </p>
-    </div>
-  )
+function getCategoryColor(category: string): 'emerald' | 'amber' | 'rose' | 'indigo' | 'slate' {
+  const c = category.toLowerCase()
+  if (c.includes('food') || c.includes('dining')) return 'amber'
+  if (c.includes('transport')) return 'indigo'
+  if (c.includes('health')) return 'emerald'
+  if (c.includes('shopping')) return 'rose'
+  return 'slate'
 }
 
 // ─── Dashboard Page ──────────────────────────────────────
 export function Dashboard() {
   const insights = useInsights()
   const transactions = useTransactionStore((s) => s.transactions)
+  const navigate = useNavigate()
 
-  const recentTransactions = useMemo(() => {
-    return [...transactions]
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-      .slice(0, 5)
-  }, [transactions])
-
-  // ─── FIXED: Compute monthly data directly from transactions ───
-  // Instead of relying on sorted monthlyData array position,
-  // directly filter transactions for current and previous months.
+  // ─── Data Computation (PRIORITY 2 FIX) ─────────────────
   const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
+  const monthStart = startOfMonth(now)
+  const monthEnd = endOfMonth(now)
 
-  // Previous month date
-  const prevDate = new Date(currentYear, currentMonth - 1, 1)
-  const prevMonth = prevDate.getMonth()
-  const prevYear = prevDate.getFullYear()
+  const currentMonthTxns = transactions.filter(t => {
+    const txDate = new Date(t.date)
+    return isWithinInterval(txDate, {
+      start: monthStart,
+      end: monthEnd
+    })
+  })
 
-  const totalBalance = useMemo(() => {
-    const income = transactions
-      .filter((t) => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0)
-    const expenses = transactions
-      .filter((t) => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0)
-    return income - expenses
-  }, [transactions])
+  const totalBalance = transactions.reduce((sum, t) => {
+    return t.type === 'income' ? sum + t.amount : sum - t.amount
+  }, 0)
 
-  // Current month income/expenses — directly filter by real calendar month
-  const monthlyIncome = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'income' && t.date.getMonth() === currentMonth && t.date.getFullYear() === currentYear)
-      .reduce((sum, t) => sum + t.amount, 0)
-  }, [transactions, currentMonth, currentYear])
+  const monthlyIncome = currentMonthTxns
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0)
 
-  const monthlyExpenses = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'expense' && t.date.getMonth() === currentMonth && t.date.getFullYear() === currentYear)
-      .reduce((sum, t) => sum + t.amount, 0)
-  }, [transactions, currentMonth, currentYear])
+  const monthlyExpenses = currentMonthTxns
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0)
 
-  // Previous month for comparison
-  const prevMonthIncome = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'income' && t.date.getMonth() === prevMonth && t.date.getFullYear() === prevYear)
-      .reduce((sum, t) => sum + t.amount, 0)
-  }, [transactions, prevMonth, prevYear])
-
-  const prevMonthExpenses = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === 'expense' && t.date.getMonth() === prevMonth && t.date.getFullYear() === prevYear)
-      .reduce((sum, t) => sum + t.amount, 0)
-  }, [transactions, prevMonth, prevYear])
-
-  const prevMonthBalance = prevMonthIncome - prevMonthExpenses
-
-  const savingsRate = monthlyIncome > 0
+  const savingsRate = monthlyIncome > 0 
     ? Math.round(((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100)
     : 0
 
-  // Change percentages
-  const balanceChange = prevMonthBalance !== 0
-    ? (((totalBalance - prevMonthBalance) / Math.abs(prevMonthBalance)) * 100).toFixed(1)
-    : monthlyIncome > 0 ? '+100.0' : '0.0'
+  // Previous month comparison for % change:
+  const prevMonthStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1))
+  const prevMonthEnd = endOfMonth(new Date(now.getFullYear(), now.getMonth() - 1))
+  
+  const prevMonthTxns = transactions.filter(t => {
+    const txDate = new Date(t.date)
+    return isWithinInterval(txDate, {
+      start: prevMonthStart,
+      end: prevMonthEnd
+    })
+  })
+  
+  const prevIncome = prevMonthTxns
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0)
+    
+  const prevExpenses = prevMonthTxns
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0)
 
-  const incomeChange = prevMonthIncome > 0
-    ? (((monthlyIncome - prevMonthIncome) / prevMonthIncome) * 100).toFixed(1)
-    : monthlyIncome > 0 ? '+100.0' : '0.0'
+  const prevBalance = prevMonthTxns.reduce((sum, t) => {
+    return t.type === 'income' ? sum + t.amount : sum - t.amount
+  }, 0)
 
-  const expenseChange = prevMonthExpenses > 0
-    ? (((monthlyExpenses - prevMonthExpenses) / prevMonthExpenses) * 100).toFixed(1)
-    : monthlyExpenses > 0 ? '+100.0' : '0.0'
+  const balanceChange = prevBalance !== 0
+    ? Number((((totalBalance - prevBalance) / Math.abs(prevBalance)) * 100).toFixed(1))
+    : monthlyIncome > 0 ? 100.0 : 0.0
+
+  const incomeChange = prevIncome > 0 
+    ? Number(((monthlyIncome - prevIncome) / prevIncome * 100).toFixed(1))
+    : monthlyIncome > 0 ? 100.0 : 0.0
+    
+  const expenseChange = prevExpenses > 0
+    ? Number(((monthlyExpenses - prevExpenses) / prevExpenses * 100).toFixed(1))
+    : monthlyExpenses > 0 ? 100.0 : 0.0
+
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+  }, [transactions])
+
+  const card1 = (
+    <div className="glass-card p-5 relative overflow-hidden h-full flex flex-col justify-between">
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+      <div>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>TOTAL BALANCE</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+                ₹<NumberTicker value={totalBalance} />
+              </span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl" style={{background:'rgba(16,185,129,0.1)'}}>
+            <WalletIcon className="w-5 h-5 text-emerald-400" />
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mt-auto">
+        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ background: balanceChange >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(251,113,133,0.12)', color: balanceChange >= 0 ? '#10B981' : '#FB7185' }}>
+          {balanceChange >= 0 ? '↑' : '↓'}{Math.abs(balanceChange)}%
+        </span>
+        <span className="text-xs text-gray-500">vs last month</span>
+      </div>
+    </div>
+  )
+
+  const card2 = (
+    <div className="glass-card p-5 relative overflow-hidden h-full flex flex-col justify-between">
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, #818CF8 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+      <div>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>MONTHLY INCOME</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+                ₹<NumberTicker value={monthlyIncome} />
+              </span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl" style={{background:'rgba(129,140,248,0.1)'}}>
+            <TrendingUp className="w-5 h-5 text-indigo-400" />
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mt-auto">
+        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ background: incomeChange >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(251,113,133,0.12)', color: incomeChange >= 0 ? '#10B981' : '#FB7185' }}>
+          {incomeChange >= 0 ? '↑' : '↓'}{Math.abs(incomeChange)}%
+        </span>
+        <span className="text-xs text-gray-500">Active salary flow</span>
+      </div>
+    </div>
+  )
+
+  const card3 = (
+    <div className="glass-card p-5 relative overflow-hidden h-full flex flex-col justify-between">
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, #FB7185 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+      <div>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>MONTHLY EXPENSES</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+                ₹<NumberTicker value={monthlyExpenses} />
+              </span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl" style={{background:'rgba(251,113,133,0.1)'}}>
+            <TrendingDown className="w-5 h-5 text-rose-400" />
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mt-auto">
+        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+          style={{ background: expenseChange <= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(251,113,133,0.12)', color: expenseChange <= 0 ? '#10B981' : '#FB7185' }}>
+          {expenseChange >= 0 ? '↑' : '↓'}{Math.abs(expenseChange)}%
+        </span>
+        <span className="text-xs text-gray-500">Controlled outflow</span>
+      </div>
+    </div>
+  )
+
+  const card4 = (
+    <div className="glass-card p-5 relative overflow-hidden h-full flex flex-col justify-between">
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+      <div>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>SAVINGS RATE</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+                <NumberTicker value={savingsRate} />%
+              </span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl" style={{background:'rgba(245,158,11,0.1)'}}>
+            <PiggyBank className="w-5 h-5 text-amber-400" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-auto pt-4">
+        <div className="h-1.5 rounded-full" style={{background:'rgba(255,255,255,0.08)'}}>
+          <div className="h-full rounded-full bg-amber-400 transition-all duration-700"
+            style={{width: `${savingsRate}%`}} />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <motion.div
@@ -241,89 +239,48 @@ export function Dashboard() {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={{ duration: 0.2, ease: 'easeOut' }}
     >
       {/* ─── Summary Cards ──────────────────────────── */}
       <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-        variants={staggerContainer}
-        initial="initial"
-        animate="animate"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.08 }}
+        }}
+        initial="hidden"
+        animate="show"
       >
-        <motion.div variants={cardVariant}>
-          <SummaryCard
-            label="Total Balance"
-            amount={totalBalance}
-            change={`${Number(balanceChange) >= 0 ? '+' : ''}${balanceChange}%`}
-            changePositive={Number(balanceChange) >= 0}
-            icon={Wallet}
-            iconBg="bg-emerald-500/10"
-            iconColor="text-emerald-400"
-            subtitle="vs last month"
-          />
-        </motion.div>
-
-        <motion.div variants={cardVariant}>
-          <SummaryCard
-            label="Monthly Income"
-            amount={monthlyIncome}
-            change={`${Number(incomeChange) >= 0 ? '+' : ''}${incomeChange}%`}
-            changePositive={Number(incomeChange) >= 0}
-            icon={TrendingUp}
-            iconBg="bg-indigo-500/10"
-            iconColor="text-indigo-400"
-            subtitle="Active salary flow"
-          />
-        </motion.div>
-
-        <motion.div variants={cardVariant}>
-          <SummaryCard
-            label="Monthly Expenses"
-            amount={monthlyExpenses}
-            change={`${Number(expenseChange) >= 0 ? '+' : ''}${expenseChange}%`}
-            changePositive={Number(expenseChange) <= 0}
-            icon={TrendingDown}
-            iconBg="bg-rose-500/10"
-            iconColor="text-rose-400"
-            subtitle="Controlled outflow"
-          />
-        </motion.div>
-
-        <motion.div variants={cardVariant}>
-          <SummaryCard
-            label="Savings Rate"
-            amount={savingsRate}
-            change={savingsRate > 0 ? `+${savingsRate}%` : '0%'}
-            changePositive={savingsRate > 0}
-            icon={PiggyBank}
-            iconBg="bg-amber-500/10"
-            iconColor="text-amber-400"
-            isCurrency={false}
-            progressBar={{
-              value: savingsRate,
-              color: savingsRate > 30 ? '#10B981' : savingsRate > 15 ? '#F59E0B' : '#FB7185',
-            }}
-          />
-        </motion.div>
+        {[card1, card2, card3, card4].map((card, i) => (
+          <motion.div key={i} className="flex flex-col h-full" variants={{
+            hidden: { opacity: 0, y: 24 },
+            show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }
+          }}>
+            {card}
+          </motion.div>
+        ))}
       </motion.div>
 
-      {/* ─── Charts Row (60/40) ─────────────────────── */}
+      {/* ─── Charts Row ─────────────────────── */}
       <motion.div
-        className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4"
+        className="flex flex-col lg:flex-row gap-4"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
       >
-        <AreaChart
-          data={insights.monthlyData}
-          title="Balance Trend"
-          subtitle="Financial trajectory overview"
-        />
-        <DonutChart
-          data={insights.categoryBreakdown}
-          title="Spending Breakdown"
-          subtitle="Category distribution"
-        />
+        <div className="flex-[3]">
+          <AreaChart
+            data={insights.monthlyData}
+            title="Balance Trend"
+            subtitle="Financial trajectory overview"
+          />
+        </div>
+        <div className="flex-[2]">
+          <DonutChart
+            data={insights.categoryBreakdown}
+            title="Spending Breakdown"
+            subtitle="Category distribution"
+          />
+        </div>
       </motion.div>
 
       {/* ─── Recent Activity ────────────────────────── */}
@@ -332,7 +289,7 @@ export function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.45 }}
       >
-        <GlassCard className="p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
@@ -342,33 +299,49 @@ export function Dashboard() {
             </div>
             <Link
               to="/transactions"
-              className="
-                flex items-center gap-1.5 text-sm font-medium
-                text-white/40 hover:text-white
-                bg-white/5 hover:bg-white/10
-                border border-white/10 hover:border-white/20
-                px-3 py-1.5 rounded-lg
-                transition-all duration-200
-              "
+              className="flex items-center gap-1.5 text-sm font-medium text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition-all"
             >
-              View All
-              <ArrowRight size={14} />
+              View All <ArrowRight size={14} />
             </Link>
           </div>
 
           <motion.div
-            className="space-y-1"
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.08 }}
+            }}
+            initial="hidden"
+            animate="show"
           >
-            {recentTransactions.map((transaction) => (
-              <motion.div key={transaction.id} variants={listItemVariant}>
-                <TransactionRow transaction={transaction} />
+            {recentTransactions.map((t) => (
+              <motion.div
+                key={t.id}
+                variants={rowVariants}
+                className="flex items-center gap-3 py-3 px-1 rounded-xl cursor-pointer border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors group"
+                onClick={() => navigate('/transactions')}
+              >
+                <Avatar name={t.merchant} size="md" />
+                
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{t.merchant}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Badge label={t.category.split(' ')[0]} color={getCategoryColor(t.category)} />
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(t.date), 'd MMM · h:mm a')}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <p className="text-sm font-semibold tabular-nums"
+                    style={{ fontFamily:'JetBrains Mono', color: t.type === 'income' ? '#10B981' : '#FB7185' }}>
+                    {t.type === 'income' ? '+' : '-'}{formatINR(t.amount)}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </motion.div>
-        </GlassCard>
+        </div>
       </motion.div>
     </motion.div>
   )

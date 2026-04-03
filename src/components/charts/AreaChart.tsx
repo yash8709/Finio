@@ -8,7 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { GlassCard } from '../ui/GlassCard'
 import type { MonthlyData } from '../../types'
 import { formatINR } from '../../utils/formatters'
 
@@ -20,35 +19,24 @@ interface AreaChartProps {
 
 type Period = '1M' | '3M' | '6M'
 
-interface CustomTooltipProps {
-  active?: boolean
-  payload?: Array<{ value: number; dataKey: string }>
-  label?: string
-}
-
-function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null
+  const value = payload[0].value
 
   return (
-    <div className="bg-[#1a1f2d] border border-white/10 rounded-xl px-4 py-3 shadow-xl shadow-black/40">
-      <p className="text-xs text-white/40 mb-2 font-medium">{label}</p>
-      {payload.map((entry, index) => (
-        <div key={index} className="flex items-center gap-2 text-sm">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{
-              backgroundColor:
-                entry.dataKey === 'income'
-                  ? '#818CF8'
-                  : entry.dataKey === 'expenses'
-                    ? '#FB7185'
-                    : '#10B981',
-            }}
-          />
-          <span className="text-white/60 capitalize">{entry.dataKey}:</span>
-          <span className="font-mono font-semibold text-white">{formatINR(entry.value)}</span>
-        </div>
-      ))}
+    <div style={{
+      background:'rgba(8,13,26,0.9)',
+      border:'1px solid rgba(255,255,255,0.1)',
+      borderRadius: 12,
+      padding:'8px 12px'
+    }}>
+      <p style={{
+        fontFamily:'JetBrains Mono',
+        color:'#10B981',fontSize:14
+      }}>{formatINR(value)}</p>
+      <p style={{
+        color:'#6B7280',fontSize:11
+      }}>{label}</p>
     </div>
   )
 }
@@ -58,20 +46,16 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
 
   const filteredData = (() => {
     switch (period) {
-      case '1M':
-        return data.slice(-1)
-      case '3M':
-        return data.slice(-3)
-      case '6M':
-      default:
-        return data
+      case '1M': return data.slice(-1)
+      case '3M': return data.slice(-3)
+      case '6M': default: return data
     }
   })()
 
   return (
-    <GlassCard className="p-6 flex flex-col">
+    <div className="glass-card p-6 flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-white">{title}</h3>
           <p className="text-xs text-white/30 uppercase tracking-widest mt-0.5">{subtitle}</p>
@@ -84,10 +68,10 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
               key={p}
               onClick={() => setPeriod(p)}
               className={`
-                px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer
+                px-3 py-1 text-xs rounded-lg transition-all duration-200 cursor-pointer
                 ${period === p
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/40 hover:text-white/60'
+                  ? 'bg-white/10 text-white font-medium'
+                  : 'text-gray-500 hover:text-gray-300'
                 }
               `}
             >
@@ -100,43 +84,28 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
       {/* Chart */}
       <div className="flex-1 min-h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsAreaChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
+          <RechartsAreaChart data={filteredData} margin={{ top: 10, right: 0, bottom: 0, left: -20 }}>
             <defs>
               <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                <stop offset="0%" stopColor="rgba(16,185,129,0.3)" />
+                <stop offset="100%" stopColor="rgba(16,185,129,0)" />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.04)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
-              tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11 }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11 }} tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
             <Area
               type="monotone"
               dataKey="balance"
               stroke="#10B981"
               strokeWidth={2}
               fill="url(#balanceGradient)"
-              dot={false}
-              activeDot={{ r: 5, fill: '#10B981', stroke: '#080D1A', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: "#10B981", stroke: "rgba(16,185,129,0.3)", strokeWidth: 8 }}
             />
           </RechartsAreaChart>
         </ResponsiveContainer>
       </div>
-    </GlassCard>
+    </div>
   )
 }

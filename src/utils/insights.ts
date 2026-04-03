@@ -68,20 +68,25 @@ export function computeInsights(transactions: Transaction[]): InsightData {
     })
   }
 
-  // ─── 4. Runway calculation ──────────────────────────────
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0)
 
-  const currentBalance = totalIncome - totalExpenses
+  const totalBalance = totalIncome - totalExpenses
 
+  const recentTransactions = transactions.slice(0, 5)
+
+  const SAVINGS_GOAL = 50000
+  const savingsGoalProgress = Math.round((totalBalance / SAVINGS_GOAL) * 100)
+
+  // ─── 5. Runway calculation ──────────────────────────────
   const monthsWithData = monthlyData.filter((m) => m.expenses > 0).length
   const avgMonthlyBurn = monthsWithData > 0
     ? monthlyData.reduce((sum, m) => sum + m.expenses, 0) / monthsWithData
     : 1
 
   const runwayMonths = avgMonthlyBurn > 0
-    ? Math.round(currentBalance / avgMonthlyBurn)
+    ? Math.round(totalBalance / avgMonthlyBurn)
     : 0
 
   // ─── 5. Surplus forecast (annual projection) ───────────
@@ -99,43 +104,24 @@ export function computeInsights(transactions: Transaction[]): InsightData {
     : format(now, 'MMM')
   const bestMonthSavings = bestMonthData ? bestMonthData.balance : 0
 
-  // ─── 7. Anomaly detection (>2x category average) ───────
-  const categoryAverages = new Map<CategoryType, number>()
-
-  for (const [category, total] of categoryTotals.entries()) {
-    const count = expenseTransactions.filter((t) => t.category === category).length
-    if (count > 0) {
-      categoryAverages.set(category, total / count)
-    }
-  }
-
+  // ─── 7. Anomaly detection (placeholder) ─────────────────
   const anomalies: AnomalyData[] = []
 
-  for (const t of expenseTransactions) {
-    const avg = categoryAverages.get(t.category)
-    if (avg && t.amount > avg * 2) {
-      const multiplier = Math.round((t.amount / avg) * 10) / 10
-      anomalies.push({
-        transaction: t,
-        categoryAverage: Math.round(avg),
-        multiplier,
-      })
-    }
-  }
-
-  // Sort anomalies by multiplier desc, take top entries
-  anomalies.sort((a, b) => b.multiplier - a.multiplier)
-
   return {
+    totalBalance,
+    totalIncome,
+    totalExpenses,
+    monthlyData,
+    categoryBreakdown,
+    recentTransactions,
+    savingsGoalProgress,
     topCategory: topCat.category,
     topCategoryAmount: topCat.total,
     topCategoryPercentage: topCat.percentage,
-    runwayMonths: Math.max(runwayMonths, 0),
+    runwayMonths,
     surplusForecast,
     bestMonth,
     bestMonthSavings,
     anomalies,
-    categoryBreakdown,
-    monthlyData,
   }
 }

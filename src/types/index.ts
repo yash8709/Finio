@@ -2,13 +2,13 @@ export interface Transaction {
   id: string
   date: Date
   amount: number
-  category: CategoryType
-  type: 'income' | 'expense'
+  category: Category
+  type: TransactionType
   merchant: string
   description: string
 }
 
-export type CategoryType =
+export type Category =
   | 'Food & Dining'
   | 'Transport'
   | 'Entertainment'
@@ -18,15 +18,18 @@ export type CategoryType =
   | 'Subscriptions'
   | 'Salary'
   | 'Freelance'
+  | 'Other'
+
+export type TransactionType = 'income' | 'expense'
 
 export type RoleType = 'admin' | 'viewer'
 
-export type SortField = 'date' | 'amount'
+export type SortField = 'date' | 'amount' | 'merchant'
 export type SortOrder = 'asc' | 'desc'
 
 export interface FilterState {
   search: string
-  category: CategoryType | 'all'
+  category: Category | 'all'
   type: 'income' | 'expense' | 'all'
   dateFrom: string
   dateTo: string
@@ -42,7 +45,7 @@ export interface MonthlyData {
 }
 
 export interface InsightData {
-  topCategory: CategoryType
+  topCategory: Category
   topCategoryAmount: number
   topCategoryPercentage: number
   runwayMonths: number
@@ -61,7 +64,7 @@ export interface AnomalyData {
 }
 
 export interface CategoryBreakdown {
-  category: CategoryType
+  category: Category
   total: number
   percentage: number
 }

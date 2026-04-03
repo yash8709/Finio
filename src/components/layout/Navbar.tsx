@@ -1,38 +1,54 @@
-import { Search, Bell, Moon, Sun } from 'lucide-react'
+import { Search, Bell, Moon, Sun, Menu } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { useTransactionStore } from '../../store/transactionStore'
 import { MOCK_USER } from '../../data/mockData'
 import { Avatar } from '../ui/Avatar'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
-interface NavbarProps {
-  title: string
+import { useLocation } from 'react-router-dom'
+
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/transactions': 'Transactions',
+  '/insights': 'Insights',
 }
 
-export function Navbar({ title }: NavbarProps) {
-  const isDarkMode = useUIStore((s) => s.isDarkMode)
-  const toggleDarkMode = useUIStore((s) => s.toggleDarkMode)
-  const isSidebarExpanded = useUIStore((s) => s.isSidebarExpanded)
-  const search = useTransactionStore((s) => s.filters.search)
+export function Navbar() {
+  const {
+    isDarkMode,
+    toggleDarkMode,
+    isSidebarExpanded,
+    toggleSidebar,
+  } = useUIStore()
+  const { search } = useTransactionStore((s) => s.filters)
   const setFilter = useTransactionStore((s) => s.setFilter)
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const location = useLocation()
+  const pageTitle = PAGE_TITLES[location.pathname] || 'Dashboard'
+
+  const leftPosition = isMobile ? 0 : isSidebarExpanded ? 240 : 72
 
   return (
     <header
       style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        left: isSidebarExpanded ? 240 : 72,
-        height: 64,
-        zIndex: 20,
-        transition: 'left 300ms ease',
+        left: leftPosition,
       }}
-      className="bg-[#080D1A]/80 backdrop-blur-xl border-b border-white/6 flex items-center justify-between px-6"
+      className="glass-navbar fixed top-0 right-0 h-16 z-20 flex items-center justify-between px-4 lg:px-6 transition-[left] duration-300 ease-in-out"
     >
-      {/* ─── Title ────────────────────────────────────── */}
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <div className="flex items-center gap-2">
+        {isMobile && (
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+        <h2 className="text-lg font-semibold text-white">{pageTitle}</h2>
+      </div>
 
       {/* ─── Right section ────────────────────────────── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 md:gap-3">
         {/* Search */}
         <div className="relative hidden md:block">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />

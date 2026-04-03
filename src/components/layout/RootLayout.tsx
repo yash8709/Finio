@@ -1,93 +1,145 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, X } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { Navbar } from './Navbar'
 import { useUIStore } from '../../store/uiStore'
+import { useTransactionStore } from '../../store/transactionStore'
+import { mockTransactions } from '../../data/mockData'
+import { useEffect } from 'react'
 
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/transactions': 'Transactions',
-  '/insights': 'Insights',
-}
+const SIDEBAR_EXPANDED = 240
+const SIDEBAR_COLLAPSED = 72
+const NAVBAR_HEIGHT = 64
 
 export function RootLayout() {
-  const isSidebarExpanded = useUIStore((s) => s.isSidebarExpanded)
-  const role = useUIStore((s) => s.role)
-  const isViewerBannerDismissed = useUIStore((s) => s.isViewerBannerDismissed)
-  const dismissViewerBanner = useUIStore((s) => s.dismissViewerBanner)
-  const location = useLocation()
-
-  const pageTitle = PAGE_TITLES[location.pathname] || 'Dashboard'
-  const showViewerBanner = role === 'viewer' && !isViewerBannerDismissed
+  const { 
+    isSidebarExpanded, 
+    role, 
+    isViewerBannerDismissed,
+    dismissViewerBanner 
+  } = useUIStore()
+  
+  const { transactions, setTransactions } = useTransactionStore()
+  
+  // Initialize mock data ONCE
+  useEffect(() => {
+    if (transactions.length === 0) {
+      setTransactions(mockTransactions)
+    }
+  }, [setTransactions, transactions.length])
+  
+  const sidebarWidth = isSidebarExpanded 
+    ? SIDEBAR_EXPANDED 
+    : SIDEBAR_COLLAPSED
 
   return (
-    <div className="min-h-screen bg-[#080D1A] text-white relative">
-      {/* ─── Atmospheric glow blobs ───────────────────── */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full -translate-y-1/4 translate-x-1/4"
-          style={{
-            background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-            filter: 'blur(40px)',
-          }}
-        />
-        <div
-          className="absolute bottom-0 left-1/4 w-[600px] h-[600px] rounded-full translate-y-1/4"
-          style={{
-            background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-            filter: 'blur(40px)',
-          }}
-        />
+    <div className="min-h-screen relative"
+      style={{ backgroundColor: '#080D1A' }}>
+      
+      {/* Background glow blobs — MUST be here */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}>
+        
+        {/* Indigo blob — top right */}
+        <div style={{
+          position: 'absolute',
+          top: '-15%',
+          right: '-10%',
+          width: '700px',
+          height: '700px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.05) 40%, transparent 70%)',
+          filter: 'blur(60px)',
+          transform: 'translateZ(0)',
+        }} />
+        
+        {/* Emerald blob — bottom left */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-10%',
+          left: '5%',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.04) 40%, transparent 70%)',
+          filter: 'blur(60px)',
+          transform: 'translateZ(0)',
+        }} />
+        
+        {/* Subtle violet blob — center */}
+        <div style={{
+          position: 'absolute',
+          top: '40%',
+          left: '40%',
+          width: '400px',
+          height: '400px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(139,92,246,0.06) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          transform: 'translateZ(0)',
+        }} />
       </div>
-
-      {/* ─── Sidebar ─────────────────────────────────── */}
-      <Sidebar />
-
-      {/* ─── Navbar ──────────────────────────────────── */}
-      <Navbar title={pageTitle} />
-
-      {/* ─── Main content ────────────────────────────── */}
-      <main
-        style={{
-          marginLeft: isSidebarExpanded ? 240 : 72,
-          paddingTop: 64,
-          minHeight: '100vh',
-          transition: 'margin-left 300ms ease',
-        }}
-      >
-        {/* Viewer Mode Banner */}
+      
+      {/* Sidebar */}
+      <div style={{ position: 'fixed', 
+        left: 0, top: 0, 
+        height: '100vh', 
+        zIndex: 50 }}>
+        <Sidebar />
+      </div>
+      
+      {/* Main content */}
+      <div style={{
+        marginLeft: sidebarWidth,
+        paddingTop: NAVBAR_HEIGHT,
+        minHeight: '100vh',
+        transition: 'margin-left 300ms ease',
+        position: 'relative',
+        zIndex: 1,
+      }}>
+        {/* Navbar */}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: sidebarWidth,
+          right: 0,
+          height: NAVBAR_HEIGHT,
+          zIndex: 40,
+          transition: 'left 300ms ease',
+        }}>
+          <Navbar />
+        </div>
+        
+        {/* Viewer banner */}
         <AnimatePresence>
-          {showViewerBanner && (
+          {role === 'viewer' && 
+           !isViewerBannerDismissed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="overflow-hidden"
-            >
-              <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Eye size={14} className="text-amber-400" />
-                  <span className="text-xs text-amber-300 font-medium">
-                    Viewer Mode — Editing features are disabled. Switch to Admin via sidebar.
-                  </span>
-                </div>
-                <button
-                  onClick={dismissViewerBanner}
-                  className="p-1 rounded text-amber-400/50 hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <X size={14} />
-                </button>
-              </div>
+              className="sticky top-0 z-30 flex items-center justify-between px-6 py-2 text-xs"
+              style={{
+                background: 'rgba(245,158,11,0.08)',
+                borderBottom: '1px solid rgba(245,158,11,0.2)',
+              }}>
+              <span className="text-amber-300">
+                👁 You are in Viewer mode. Switch to Admin to make changes.
+              </span>
+              <button 
+                onClick={dismissViewerBanner}
+                className="text-amber-400 hover:text-amber-200 ml-4">
+                ×
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <div className="p-6">
+        
+        {/* Page content */}
+        <main className="p-6">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

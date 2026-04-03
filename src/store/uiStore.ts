@@ -12,6 +12,7 @@ interface UIActions {
   setRole: (role: RoleType) => void
   toggleDarkMode: () => void
   toggleSidebar: () => void
+  setSidebarExpanded: (isOpen: boolean) => void
   dismissViewerBanner: () => void
 }
 
@@ -22,20 +23,10 @@ export const useUIStore = create<UIState & UIActions>((set) => ({
   isSidebarExpanded: true,
   isViewerBannerDismissed: false,
 
-  // ─── Actions ─────────────────────────────────────────
-  setRole: (role) => {
-    set({ role, isViewerBannerDismissed: false })
-  },
-
-  toggleDarkMode: () => {
-    set((state) => ({ isDarkMode: !state.isDarkMode }))
-  },
-
-  toggleSidebar: () => {
-    set((state) => ({ isSidebarExpanded: !state.isSidebarExpanded }))
-  },
-
-  dismissViewerBanner: () => {
-    set({ isViewerBannerDismissed: true })
-  },
+  // ─── Actions ───────────────────────────────────────────
+  setRole: (role) => set({ role }),
+  toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+  toggleSidebar: () => set((state) => ({ isSidebarExpanded: !state.isSidebarExpanded })),
+  setSidebarExpanded: (isOpen) => set({ isSidebarExpanded: isOpen }),
+  dismissViewerBanner: () => set({ isViewerBannerDismissed: true }),
 }))

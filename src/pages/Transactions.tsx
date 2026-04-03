@@ -26,12 +26,12 @@ import { useFilteredTransactions } from '../hooks/useFilteredTransactions'
 import { useTransactionStore } from '../store/transactionStore'
 import { useUIStore } from '../store/uiStore'
 import { formatINR, formatDate } from '../utils/formatters'
-import type { Transaction, CategoryType } from '../types'
+import type { Transaction, Category } from '../types'
 import { faker } from '@faker-js/faker'
 
 const ITEMS_PER_PAGE = 10
 
-const ALL_CATEGORIES: CategoryType[] = [
+const ALL_CATEGORIES: Category[] = [
   'Food & Dining',
   'Transport',
   'Entertainment',
@@ -80,12 +80,11 @@ export function Transactions() {
   // ─── Form state for drawer ─────────────────────────────
   const [formAmount, setFormAmount] = useState('')
   const [formMerchant, setFormMerchant] = useState('')
-  const [formCategory, setFormCategory] = useState<CategoryType>('Food & Dining')
+  const [formCategory, setFormCategory] = useState<Category>('Food & Dining')
   const [formType, setFormType] = useState<'income' | 'expense'>('expense')
   const [formDate, setFormDate] = useState('')
   const [formDescription, setFormDescription] = useState('')
 
-  // FIXED: useEffect instead of useMemo to avoid setState during render
   useEffect(() => {
     setCurrentPage(1)
   }, [filters])
@@ -328,12 +327,10 @@ export function Transactions() {
                   <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                   <select
                     value={filters.category}
-                    onChange={(e) => setFilter({ category: e.target.value as CategoryType | 'all' })}
+                    onChange={(e) => setFilter({ category: e.target.value as Category | 'all' })}
                     className="
-                      w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white
+                      w-full glass-input
                       pl-9 pr-3 py-2 appearance-none cursor-pointer
-                      focus:outline-none focus:border-emerald-500/40
-                      transition-all duration-200
                     "
                   >
                     <option value="all" className="bg-[#1a1f2d]">All Categories</option>
@@ -452,7 +449,7 @@ export function Transactions() {
               <motion.div key={t.id} variants={rowVariants}>
                 {/* Main row */}
                 <div
-                  className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-6 py-3.5 items-center group hover:bg-white/[0.02] cursor-pointer transition-colors duration-150"
+                  className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-4 py-3 items-center group hover:bg-white/[0.03] border-b border-white/[0.04] cursor-pointer transition-colors duration-150"
                   onClick={() => setExpandedRowId(expandedRowId === t.id ? null : t.id)}
                 >
                   {/* Date */}
@@ -701,12 +698,10 @@ export function Transactions() {
               <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
               <select
                 value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value as CategoryType)}
+                onChange={(e) => setFormCategory(e.target.value as Category)}
                 className="
-                  w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white
+                  w-full glass-input
                   pl-9 pr-8 py-2.5 appearance-none cursor-pointer
-                  focus:outline-none focus:border-emerald-500/40
-                  transition-all duration-200
                 "
               >
                 {ALL_CATEGORIES.map((cat) => (
@@ -741,11 +736,8 @@ export function Transactions() {
               placeholder="Add a note..."
               rows={3}
               className="
-                w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white
+                w-full glass-input
                 px-3 py-2.5 resize-none
-                placeholder:text-white/20
-                focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20
-                transition-all duration-200
               "
             />
           </div>
