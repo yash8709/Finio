@@ -28,16 +28,16 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null
 
   return (
-    <div className="bg-[#1a1f2d] border border-white/10 rounded-xl px-4 py-3 shadow-xl shadow-black/40">
-      <p className="text-xs text-white/40 mb-2 font-medium">{label}</p>
+    <div className="bg-[var(--bg-base)] border border-theme rounded-xl px-4 py-3 shadow-xl shadow-black/40">
+      <p className="text-xs text-secondary mb-2 font-medium">{label}</p>
       {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2 text-sm">
           <div
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: entry.fill }}
           />
-          <span className="text-white/60 capitalize">{entry.dataKey}:</span>
-          <span className="font-mono font-semibold text-white">{formatINR(entry.value)}</span>
+          <span className="text-secondary capitalize">{entry.dataKey}:</span>
+          <span className="font-mono font-semibold text-primary">{formatINR(entry.value)}</span>
         </div>
       ))}
     </div>
@@ -59,7 +59,7 @@ function CustomLegend({ payload }: CustomLegendProps) {
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-xs text-white/50 capitalize">{entry.value}</span>
+          <span className="text-xs text-secondary capitalize">{entry.value}</span>
         </div>
       ))}
     </div>
@@ -72,8 +72,8 @@ export function BarChart({ data, title, subtitle }: BarChartProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <p className="text-xs text-white/30 uppercase tracking-widest mt-0.5">{subtitle}</p>
+          <h3 className="text-lg font-semibold text-primary">{title}</h3>
+          <p className="text-xs text-muted uppercase tracking-widest mt-0.5">{subtitle}</p>
         </div>
       </div>
 

@@ -36,37 +36,57 @@ export function SpendingHeatmap({ transactions }: HeatmapProps) {
   }, [transactions])
 
   const getColor = (amount: number) => {
-    if (amount === 0) return 'rgba(255,255,255,0.04)'
-    if (amount <= 500) return 'rgba(16,185,129,0.2)'
-    if (amount <= 2000) return 'rgba(16,185,129,0.5)'
-    return 'rgba(16,185,129,0.9)'
+    if (amount === 0) return 'var(--heatmap-empty)'
+    if (amount <= 500) return 'rgba(16,185,129,0.25)'
+    if (amount <= 2000) return 'rgba(16,185,129,0.50)'
+    if (amount <= 5000) return 'rgba(16,185,129,0.75)'
+    return 'rgba(16,185,129,1.00)'
   }
 
-  // Monday, Wednesday, Friday indexing (0 is Mon, 2 is Wed, 4 is Fri in our array)
-  const yLabels = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun']
+  const CELL_SIZE = 14
+  const CELL_GAP = 3
+  const ROW_HEIGHT = CELL_SIZE + CELL_GAP
+  const TOP_OFFSET = 32
+  const LEFT_OFFSET = 32
+
+  const labelRows = [
+    { label: 'Mon', row: 0 },
+    { label: 'Wed', row: 2 },
+    { label: 'Fri', row: 4 },
+    { label: 'Sun', row: 6 },
+  ]
 
   return (
-    <div className="flex items-start gap-4 mt-6">
-      <div className="flex flex-col gap-[14px] mt-6 text-[10px] text-gray-500 font-medium">
-        {yLabels.map((l, i) => (
-          <span key={i} className="h-[14px] flex items-center leading-none">{l}</span>
-        ))}
-      </div>
-      
+    <div className="flex items-start mt-2">
       <div className="flex-1 overflow-x-auto pb-4">
-        <svg height={DAYS * 18 + 20} className="min-w-max">
+        <svg height={TOP_OFFSET + DAYS * ROW_HEIGHT + 10} className="min-w-max" width={LEFT_OFFSET + WEEKS * ROW_HEIGHT + 10}>
+          
+          {/* Day Labels */}
+          {labelRows.map(({ label, row }) => (
+            <text
+              key={label}
+              x={0}
+              y={TOP_OFFSET + row * ROW_HEIGHT + CELL_SIZE / 2 + 4}
+              fontSize={10}
+              fill="var(--text-muted)"
+              dominantBaseline="middle"
+            >
+              {label}
+            </text>
+          ))}
+
           {/* Columns (Weeks) */}
           {dataset.days.map((week, wIndex) => {
-            const x = wIndex * 18
-            const showMonthLabel = wIndex % 2 === 0 // Show every 2 weeks to avoid clutter
+            const x = LEFT_OFFSET + wIndex * ROW_HEIGHT
+            const showMonthLabel = wIndex % 2 === 0
             
             return (
               <g key={wIndex}>
                 {showMonthLabel && (
                   <text 
                     x={x} 
-                    y={12} 
-                    fill="#6B7280" 
+                    y={16} 
+                    fill="var(--text-muted)" 
                     fontSize={10} 
                     fontFamily="Sora"
                   >
@@ -76,17 +96,19 @@ export function SpendingHeatmap({ transactions }: HeatmapProps) {
                 
                 {/* Rows (Days) */}
                 {week.map((day, dIndex) => {
-                  const y = dIndex * 18 + 24
+                  const y = TOP_OFFSET + dIndex * ROW_HEIGHT
                   return (
                     <g key={dIndex}>
                       <title>{format(day.date, 'MMM d, yyyy')}: ₹{day.amount}</title>
                       <rect
                         x={x}
                         y={y}
-                        width={14}
-                        height={14}
+                        width={CELL_SIZE}
+                        height={CELL_SIZE}
                         rx={3}
                         fill={getColor(day.amount)}
+                        stroke="var(--border-card)"
+                        strokeWidth={1}
                         className="transition-colors hover:stroke-white hover:stroke-1"
                       />
                     </g>

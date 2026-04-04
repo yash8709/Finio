@@ -16,16 +16,29 @@ interface UIActions {
   dismissViewerBanner: () => void
 }
 
+// ─── Initialize theme from localStorage ────────────────
+const savedTheme = localStorage.getItem('finio-theme') || 'dark'
+document.documentElement.setAttribute('data-theme', savedTheme)
+
 export const useUIStore = create<UIState & UIActions>((set) => ({
   // ─── State ───────────────────────────────────────────
   role: 'admin',
-  isDarkMode: true,
+  isDarkMode: savedTheme === 'dark',
   isSidebarExpanded: true,
   isViewerBannerDismissed: false,
 
   // ─── Actions ───────────────────────────────────────────
   setRole: (role) => set({ role }),
-  toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+
+  toggleDarkMode: () =>
+    set((state) => {
+      const newMode = !state.isDarkMode
+      const theme = newMode ? 'dark' : 'light'
+      document.documentElement.setAttribute('data-theme', theme)
+      localStorage.setItem('finio-theme', theme)
+      return { isDarkMode: newMode }
+    }),
+
   toggleSidebar: () => set((state) => ({ isSidebarExpanded: !state.isSidebarExpanded })),
   setSidebarExpanded: (isOpen) => set({ isSidebarExpanded: isOpen }),
   dismissViewerBanner: () => set({ isViewerBannerDismissed: true }),

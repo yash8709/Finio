@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -16,6 +16,7 @@ import {
   Tag,
   IndianRupee,
 } from 'lucide-react'
+import { subDays } from 'date-fns'
 import { GlassCard } from '../components/ui/GlassCard'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
@@ -25,8 +26,9 @@ import { Drawer } from '../components/ui/Drawer'
 import { useFilteredTransactions } from '../hooks/useFilteredTransactions'
 import { useTransactionStore } from '../store/transactionStore'
 import { useUIStore } from '../store/uiStore'
+import { useInsights } from '../hooks/useInsights'
 import { formatINR, formatDate } from '../utils/formatters'
-import type { Transaction, Category } from '../types'
+import type { Transaction, Category, FilterState } from '../types'
 import { faker } from '@faker-js/faker'
 
 const ITEMS_PER_PAGE = 10
@@ -60,6 +62,55 @@ const rowVariants = {
   show: { opacity: 1, x: 0, transition: { duration: 0.2 } },
 }
 
+// ─── Filter Presets ──────────────────────────────────────
+interface FilterPreset {
+  id: string
+  label: string
+  description: string
+  filters: Partial<FilterState>
+  anomalyIds?: string[]
+}
+
+function buildFilterPresets(anomalyIds: string[]): FilterPreset[] {
+  const now = new Date()
+  return [
+    {
+      id: 'high-expenses',
+      label: '📈 High Expenses',
+      description: 'Transactions over ₹5,000',
+      filters: { type: 'expense', minAmount: 5000 },
+    },
+    {
+      id: 'subscriptions',
+      label: '🔁 Subscriptions',
+      description: 'Category: Subscriptions',
+      filters: { category: 'Subscriptions' },
+    },
+    {
+      id: 'last-7-days',
+      label: '📅 Last 7 Days',
+      description: 'Past week only',
+      filters: {
+        dateFrom: subDays(now, 7).toISOString().split('T')[0],
+        dateTo: now.toISOString().split('T')[0],
+      },
+    },
+    {
+      id: 'anomalies',
+      label: '⚠️ Anomalies',
+      description: 'Unusual spending detected',
+      filters: {},
+      anomalyIds,
+    },
+    {
+      id: 'income-only',
+      label: '💰 Income Only',
+      description: 'Income transactions',
+      filters: { type: 'income' },
+    },
+  ]
+}
+
 // ─── Transactions Page ───────────────────────────────────
 export function Transactions() {
   const { filteredTransactions, totalCount, filteredCount, activeFilterCount } =
@@ -71,11 +122,23 @@ export function Transactions() {
   const toggleDrawer = useTransactionStore((s) => s.toggleDrawer)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
+  const transactions = useTransactionStore((s) => s.transactions)
   const role = useUIStore((s) => s.role)
+  const insights = useInsights()
 
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [activePreset, setActivePreset] = useState<string | null>(null)
+  const isApplyingPreset = useRef(false)
+
+  // Anomaly transaction IDs for preset
+  const anomalyIds = useMemo(
+    () => insights.anomalies.map((a) => a.transaction.id),
+    [insights.anomalies],
+  )
+
+  const filterPresets = useMemo(() => buildFilterPresets(anomalyIds), [anomalyIds])
 
   // ─── Form state for drawer ─────────────────────────────
   const [formAmount, setFormAmount] = useState('')
@@ -87,7 +150,48 @@ export function Transactions() {
 
   useEffect(() => {
     setCurrentPage(1)
+    // Deactivate preset if user changes filters manually
+    if (!isApplyingPreset.current && activePreset) {
+      setActivePreset(null)
+    }
+    isApplyingPreset.current = false
   }, [filters])
+
+  // ─── Preset handlers ──────────────────────────────────
+  const handlePresetClick = useCallback(
+    (preset: FilterPreset) => {
+      if (activePreset === preset.id) {
+        // Deactivate
+        setActivePreset(null)
+        resetFilters()
+        return
+      }
+
+      isApplyingPreset.current = true
+      setActivePreset(preset.id)
+      resetFilters()
+
+      // For anomalies, use search-based approach with anomaly IDs
+      if (preset.id === 'anomalies' && preset.anomalyIds?.length) {
+        // Filter by searching the anomaly merchant names
+        const anomalyTxns = transactions.filter((t) =>
+          preset.anomalyIds!.includes(t.id),
+        )
+        if (anomalyTxns.length > 0) {
+          const firstMerchant = anomalyTxns[0].merchant
+          isApplyingPreset.current = true
+          setFilter({ search: firstMerchant })
+        }
+        return
+      }
+
+      if (Object.keys(preset.filters).length > 0) {
+        isApplyingPreset.current = true
+        setFilter(preset.filters)
+      }
+    },
+    [activePreset, resetFilters, setFilter, transactions],
+  )
 
   // ─── Pagination ────────────────────────────────────────
   const totalPages = Math.ceil(filteredCount / ITEMS_PER_PAGE)
@@ -205,6 +309,42 @@ export function Transactions() {
       exit="exit"
       transition={{ duration: 0.2, ease: 'easeOut' }}
     >
+      {/* ─── Filter Preset Chips ──────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {filterPresets.map((preset) => {
+          const isActive = activePreset === preset.id
+          return (
+            <button
+              key={preset.id}
+              onClick={() => handlePresetClick(preset)}
+              title={preset.description}
+              className={`
+                glass-card px-3 py-1.5 rounded-full text-xs cursor-pointer whitespace-nowrap
+                flex items-center gap-1.5 transition-all duration-200
+                ${isActive
+                  ? 'border border-[#10B981] text-[#10B981]'
+                  : 'text-secondary hover:border-white/20 hover:text-primary'
+                }
+              `}
+            >
+              {preset.label}
+              {isActive && (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActivePreset(null)
+                    resetFilters()
+                  }}
+                  className="ml-0.5 p-0.5 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <X size={10} />
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
       {/* ─── Controls Bar ──────────────────────────────── */}
       <GlassCard className="p-4 sticky top-16 z-10">
         <div className="flex items-center gap-3 flex-wrap">
@@ -227,7 +367,7 @@ export function Transactions() {
           >
             Filters
             {activeFilterCount > 0 && (
-              <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] flex items-center justify-center font-bold">
+              <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-primary text-[10px] flex items-center justify-center font-bold">
                 {activeFilterCount}
               </span>
             )}
@@ -255,30 +395,38 @@ export function Transactions() {
 
           <div className="flex-1" />
 
-          {/* Admin-only actions */}
-          {role === 'admin' && (
-            <>
+          {/* Admin / Export actions */}
+          <div className="relative group flex items-center">
+            <div className={role !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
               <Button
                 variant="ghost"
                 size="sm"
                 icon={Download}
-                onClick={handleExportCSV}
+                onClick={role === 'admin' ? handleExportCSV : undefined}
+                className={role !== 'admin' ? 'pointer-events-none' : ''}
               >
                 Export CSV
               </Button>
+            </div>
+            {role !== 'admin' && (
+              <div className="absolute top-[120%] right-0 mt-1 px-3 py-1.5 rounded-lg bg-[#080D1A] border border-white/10 text-xs text-secondary opacity-0 group-hover:opacity-100 transition-duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                Only admins can export data
+              </div>
+            )}
+          </div>
 
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={() => {
-                  resetForm()
-                  toggleDrawer()
-                }}
-              >
-                Add Transaction
-              </Button>
-            </>
+          {role === 'admin' && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={Plus}
+              onClick={() => {
+                resetForm()
+                toggleDrawer()
+              }}
+            >
+              Add Transaction
+            </Button>
           )}
         </div>
 
@@ -291,7 +439,7 @@ export function Transactions() {
           <div className="border-t border-white/6 pt-4 space-y-4">
             {/* Type segmented control */}
             <div>
-              <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+              <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
                 Transaction Type
               </label>
               <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 w-fit">
@@ -306,8 +454,8 @@ export function Transactions() {
                           ? 'bg-emerald-500/20 text-emerald-400'
                           : t === 'expense'
                             ? 'bg-rose-500/20 text-rose-400'
-                            : 'bg-white/10 text-white'
-                        : 'text-white/40 hover:text-white/60'
+                            : 'bg-white/10 text-primary'
+                        : 'text-secondary hover:text-secondary'
                       }
                     `}
                   >
@@ -320,11 +468,11 @@ export function Transactions() {
             <div className="flex items-end gap-4 flex-wrap">
               {/* Category select */}
               <div className="min-w-[200px]">
-                <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+                <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
                   Category
                 </label>
                 <div className="relative">
-                  <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
                   <select
                     value={filters.category}
                     onChange={(e) => setFilter({ category: e.target.value as Category | 'all' })}
@@ -338,13 +486,13 @@ export function Transactions() {
                       <option key={cat} value={cat} className="bg-[#1a1f2d]">{cat}</option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                 </div>
               </div>
 
               {/* Date from */}
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+                <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
                   From Date
                 </label>
                 <Input
@@ -357,7 +505,7 @@ export function Transactions() {
 
               {/* Date to */}
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+                <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
                   To Date
                 </label>
                 <Input
@@ -378,13 +526,13 @@ export function Transactions() {
                     className="
                       inline-flex items-center gap-1.5
                       bg-white/5 border border-white/10 rounded-full
-                      text-xs text-white/60 px-3 py-1
+                      text-xs text-secondary px-3 py-1
                     "
                   >
                     {f.label}
                     <button
                       onClick={f.onRemove}
-                      className="text-white/30 hover:text-white/70 cursor-pointer"
+                      className="text-secondary hover:text-secondary cursor-pointer"
                     >
                       <X size={12} />
                     </button>
@@ -403,9 +551,9 @@ export function Transactions() {
       </GlassCard>
 
       {/* ─── Transaction Count ─────────────────────────── */}
-      <p className="text-xs text-white/30">
-        Showing <span className="font-mono text-white/50">{filteredCount}</span> of{' '}
-        <span className="font-mono text-white/50">{totalCount}</span> transactions
+      <p className="text-xs text-secondary">
+        Showing <span className="font-mono text-secondary">{filteredCount}</span> of{' '}
+        <span className="font-mono text-secondary">{totalCount}</span> transactions
       </p>
 
       {/* ─── Transactions Table ────────────────────────── */}
@@ -413,10 +561,10 @@ export function Transactions() {
         /* Empty state */
         <GlassCard className="p-12 text-center">
           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <Search size={24} className="text-white/20" />
+            <Search size={24} className="text-secondary" />
           </div>
-          <h3 className="text-lg font-medium text-white/60 mb-1">No transactions found</h3>
-          <p className="text-sm text-white/30">
+          <h3 className="text-lg font-medium text-secondary mb-1">No transactions found</h3>
+          <p className="text-sm text-secondary">
             Try adjusting your filters or search query.
           </p>
           {activeFilterCount > 0 && (
@@ -429,12 +577,12 @@ export function Transactions() {
         <GlassCard className="overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-6 py-3 border-b border-white/6">
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">Date</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">Merchant</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">Category</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">Type</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium text-right">Amount</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium text-right">Actions</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Date</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Merchant</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Category</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Type</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Amount</span>
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Actions</span>
           </div>
 
           {/* Table body */}
@@ -454,10 +602,10 @@ export function Transactions() {
                 >
                   {/* Date */}
                   <div className="flex flex-col">
-                    <span className="text-sm text-white font-mono">
+                    <span className="text-sm text-primary font-mono">
                       {formatDate(t.date, 'dd MMM')}
                     </span>
-                    <span className="text-xs text-white/30">
+                    <span className="text-xs text-secondary">
                       {formatDate(t.date, 'h:mm a')}
                     </span>
                   </div>
@@ -465,7 +613,7 @@ export function Transactions() {
                   {/* Merchant */}
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={t.merchant} size="sm" />
-                    <span className="text-sm text-white truncate">{t.merchant}</span>
+                    <span className="text-sm text-primary truncate">{t.merchant}</span>
                   </div>
 
                   {/* Category */}
@@ -502,7 +650,7 @@ export function Transactions() {
                             setFormDescription(t.description)
                             toggleDrawer()
                           }}
-                          className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/5 transition-all cursor-pointer"
                         >
                           <Pencil size={14} />
                         </button>
@@ -511,7 +659,7 @@ export function Transactions() {
                             e.stopPropagation()
                             deleteTransaction(t.id)
                           }}
-                          className="p-1.5 rounded-lg text-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg text-secondary hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -532,22 +680,22 @@ export function Transactions() {
                     >
                       <div className="grid grid-cols-3 gap-6 text-sm py-2">
                         <div>
-                          <span className="text-[10px] uppercase tracking-widest text-white/30 block mb-1">
+                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
                             Description
                           </span>
-                          <p className="text-white/60">{t.description}</p>
+                          <p className="text-secondary">{t.description}</p>
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase tracking-widest text-white/30 block mb-1">
+                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
                             Transaction ID
                           </span>
-                          <p className="font-mono text-white/40 text-xs">{t.id.slice(0, 12)}...</p>
+                          <p className="font-mono text-secondary text-xs">{t.id.slice(0, 12)}...</p>
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase tracking-widest text-white/30 block mb-1">
+                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
                             Full Date
                           </span>
-                          <p className="text-white/60">
+                          <p className="text-secondary">
                             {formatDate(t.date, 'EEEE, dd MMMM yyyy • hh:mm a')}
                           </p>
                         </div>
@@ -562,23 +710,23 @@ export function Transactions() {
           {/* ─── Pagination ────────────────────────────── */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-white/6">
-              <p className="text-xs text-white/30">
-                Page <span className="font-mono text-white/50">{currentPage}</span> of{' '}
-                <span className="font-mono text-white/50">{totalPages}</span>
+              <p className="text-xs text-secondary">
+                Page <span className="font-mono text-secondary">{currentPage}</span> of{' '}
+                <span className="font-mono text-secondary">{totalPages}</span>
               </p>
 
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronLeft size={16} />
                 </button>
 
                 {pageNumbers.map((page, i) =>
                   page === '...' ? (
-                    <span key={`ellipsis-${i}`} className="px-2 text-white/20 text-sm">
+                    <span key={`ellipsis-${i}`} className="px-2 text-secondary text-sm">
                       …
                     </span>
                   ) : (
@@ -589,7 +737,7 @@ export function Transactions() {
                         w-8 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer
                         ${currentPage === page
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'text-white/40 hover:text-white hover:bg-white/5'
+                          : 'text-secondary hover:text-primary hover:bg-white/5'
                         }
                       `}
                     >
@@ -601,7 +749,7 @@ export function Transactions() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -621,7 +769,7 @@ export function Transactions() {
         <div className="space-y-5">
           {/* Amount */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Amount
             </label>
             <div className="relative">
@@ -633,11 +781,11 @@ export function Transactions() {
                 placeholder="0.00"
                 className="
                   w-full bg-white/5 border border-white/10 rounded-lg
-                  text-2xl font-mono font-bold text-white
+                  text-2xl font-mono font-bold text-primary
                   pl-9 pr-3 py-3
                   focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20
                   transition-all duration-200
-                  placeholder:text-white/20
+                  placeholder:text-secondary
                 "
               />
             </div>
@@ -645,7 +793,7 @@ export function Transactions() {
 
           {/* Transaction type toggle */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Transaction Type
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -655,7 +803,7 @@ export function Transactions() {
                   py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer
                   ${formType === 'income'
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
+                    : 'bg-white/5 text-secondary border border-white/10 hover:border-white/20'
                   }
                 `}
               >
@@ -667,7 +815,7 @@ export function Transactions() {
                   py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer
                   ${formType === 'expense'
                     ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                    : 'bg-white/5 text-white/40 border border-white/10 hover:border-white/20'
+                    : 'bg-white/5 text-secondary border border-white/10 hover:border-white/20'
                   }
                 `}
               >
@@ -678,7 +826,7 @@ export function Transactions() {
 
           {/* Merchant */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Merchant / Payee
             </label>
             <Input
@@ -691,11 +839,11 @@ export function Transactions() {
 
           {/* Category */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Category
             </label>
             <div className="relative">
-              <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
               <select
                 value={formCategory}
                 onChange={(e) => setFormCategory(e.target.value as Category)}
@@ -708,13 +856,13 @@ export function Transactions() {
                   <option key={cat} value={cat} className="bg-[#1a1f2d]">{cat}</option>
                 ))}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
             </div>
           </div>
 
           {/* Date */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Transaction Date
             </label>
             <Input
@@ -727,7 +875,7 @@ export function Transactions() {
 
           {/* Description */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">
+            <label className="text-[10px] uppercase tracking-widest text-secondary mb-2 block">
               Description (Optional)
             </label>
             <textarea
@@ -759,8 +907,8 @@ export function Transactions() {
               }}
               className="
                 w-full py-2.5 rounded-lg text-sm font-medium
-                bg-white/5 text-white/50 border border-white/10
-                hover:bg-white/10 hover:text-white/70
+                bg-white/5 text-secondary border border-white/10
+                hover:bg-white/10 hover:text-secondary
                 transition-all duration-200 cursor-pointer
               "
             >

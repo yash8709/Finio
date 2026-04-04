@@ -39,52 +39,51 @@ export function Navbar() {
         {isMobile && (
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+            className="p-2 rounded-lg transition-all cursor-pointer"
+            style={{ color: 'var(--text-muted)' }}
           >
             <Menu size={20} />
           </button>
         )}
-        <h2 className="text-lg font-semibold text-white">{pageTitle}</h2>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{pageTitle}</h2>
       </div>
 
       {/* ─── Right section ────────────────────────────── */}
       <div className="flex items-center gap-1 md:gap-3">
         {/* Search */}
         <div className="relative hidden md:block">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
           <input
             type="text"
             value={search}
             onChange={(e) => setFilter({ search: e.target.value })}
             placeholder="Search analytics..."
-            className="
-              w-52 bg-white/5 border border-white/10 rounded-lg
-              text-sm text-white placeholder:text-white/30
-              pl-9 pr-3 py-1.5
-              focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20
-              transition-all duration-200
-            "
+            className="glass-input w-52 text-sm pl-9 pr-3 py-1.5"
           />
         </div>
 
         {/* Notifications */}
-        <button className="p-2 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-all cursor-pointer">
+        <button
+          className="p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+          style={{ color: 'var(--text-muted)' }}
+        >
           <Bell size={18} />
         </button>
 
         {/* Dark mode */}
         <button
           onClick={toggleDarkMode}
-          className="p-2 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-all cursor-pointer"
+          className="p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+          style={{ color: 'var(--text-muted)' }}
         >
           {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
-        {/* User info */}
-        <div className="flex items-center gap-2.5 pl-3 border-l border-white/10">
+        {/* User info — primary identity location */}
+        <div className="flex items-center gap-2.5 pl-3" style={{ borderLeft: '1px solid var(--divider)' }}>
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-white leading-tight">{MOCK_USER.name}</p>
-            <p className="text-[10px] font-mono text-white/40">{MOCK_USER.id}</p>
+            <p className="text-sm font-medium leading-tight" style={{ color: 'var(--text-primary)' }}>{MOCK_USER.name}</p>
+            <p className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>{MOCK_USER.id}</p>
           </div>
           <Avatar name={MOCK_USER.name} size="md" />
         </div>

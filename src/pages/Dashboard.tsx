@@ -7,14 +7,19 @@ import {
   TrendingDown,
   PiggyBank,
   ArrowRight,
+  ShieldCheck,
 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { NumberTicker } from '../components/ui/NumberTicker'
+import { HealthScoreGauge } from '../components/ui/HealthScoreGauge'
+import { SmartBanner } from '../components/ui/SmartBanner'
 import { AreaChart } from '../components/charts/AreaChart'
 import { DonutChart } from '../components/charts/DonutChart'
 import { useInsights } from '../hooks/useInsights'
 import { formatINR } from '../utils/formatters'
+import { computeHealthScore } from '../utils/insights'
+import { getBannerState } from '../utils/getBannerState'
 import type { Transaction } from '../types'
 import { useTransactionStore } from '../store/transactionStore'
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns'
@@ -45,6 +50,20 @@ export function Dashboard() {
   const insights = useInsights()
   const transactions = useTransactionStore((s) => s.transactions)
   const navigate = useNavigate()
+
+  // ─── Health Score ──────────────────────────────────────
+  const healthScore = useMemo(() => computeHealthScore(transactions), [transactions])
+
+  // ─── Smart Banner ─────────────────────────────────────
+  const bannerState = useMemo(
+    () => getBannerState(
+      transactions,
+      insights.anomalies,
+      insights.topCategoryPercentage,
+      insights.topCategory,
+    ),
+    [transactions, insights.anomalies, insights.topCategoryPercentage, insights.topCategory],
+  )
 
   // ─── Data Computation (PRIORITY 2 FIX) ─────────────────
   const now = new Date()
@@ -126,7 +145,7 @@ export function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>TOTAL BALANCE</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+              <span className="text-3xl font-bold text-primary tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
                 ₹<NumberTicker value={totalBalance} />
               </span>
             </div>
@@ -155,7 +174,7 @@ export function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>MONTHLY INCOME</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+              <span className="text-3xl font-bold text-primary tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
                 ₹<NumberTicker value={monthlyIncome} />
               </span>
             </div>
@@ -184,7 +203,7 @@ export function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>MONTHLY EXPENSES</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+              <span className="text-3xl font-bold text-primary tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
                 ₹<NumberTicker value={monthlyExpenses} />
               </span>
             </div>
@@ -213,7 +232,7 @@ export function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-1" style={{fontFamily:'Sora'}}>SAVINGS RATE</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+              <span className="text-3xl font-bold text-primary tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
                 <NumberTicker value={savingsRate} />%
               </span>
             </div>
@@ -240,6 +259,9 @@ export function Dashboard() {
       animate="animate"
       exit="exit"
     >
+      {/* ─── Smart Banner ────────────────────────────── */}
+      <SmartBanner banner={bannerState} />
+
       {/* ─── Summary Cards ──────────────────────────── */}
       <motion.div
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
@@ -258,6 +280,61 @@ export function Dashboard() {
             {card}
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* ─── Health Score Card (5th card) ────────────── */}
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="glass-card p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
+            style={{ background: `radial-gradient(circle, ${healthScore.color} 0%, transparent 70%)`, transform: 'translate(30%, -30%)' }} />
+
+          <div className="flex flex-col lg:flex-row items-center gap-6">
+            {/* Left — Label + Gauge */}
+            <div className="flex flex-col items-center lg:items-start gap-3 lg:min-w-[200px]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl" style={{ background: `${healthScore.color}1A` }}>
+                  <ShieldCheck className="w-5 h-5" style={{ color: healthScore.color }} />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500" style={{ fontFamily: 'Sora' }}>Health Score</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: healthScore.color, fontFamily: 'Sora' }}>
+                    Grade {healthScore.grade} · {healthScore.label}
+                  </p>
+                </div>
+              </div>
+              <HealthScoreGauge data={healthScore} />
+            </div>
+
+            {/* Right — Breakdown Pills */}
+            <div className="flex-1 w-full">
+              <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3" style={{ fontFamily: 'Sora' }}>Score Breakdown</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                {[
+                  { label: 'Savings', score: healthScore.breakdown.savingsRate.score, max: healthScore.breakdown.savingsRate.max, color: '#10B981' },
+                  { label: 'Control', score: healthScore.breakdown.spendingControl.score, max: healthScore.breakdown.spendingControl.max, color: '#818CF8' },
+                  { label: 'Balance', score: healthScore.breakdown.categoryBalance.score, max: healthScore.breakdown.categoryBalance.max, color: '#F59E0B' },
+                  { label: 'Streak', score: healthScore.breakdown.consistency.score, max: healthScore.breakdown.consistency.max, color: '#34D399' },
+                ].map((pill) => (
+                  <div
+                    key={pill.label}
+                    className="rounded-xl px-3 py-2.5 text-center"
+                    style={{ background: `${pill.color}15`, border: `1px solid ${pill.color}20` }}
+                  >
+                    <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: `${pill.color}99`, fontFamily: 'Sora' }}>{pill.label}</p>
+                    <p className="font-mono tabular-nums text-sm font-bold" style={{ color: pill.color }}>
+                      {pill.score}<span className="text-secondary font-normal">/{pill.max}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* ─── Charts Row ─────────────────────── */}
@@ -292,14 +369,14 @@ export function Dashboard() {
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-              <p className="text-xs text-white/30 uppercase tracking-widest mt-0.5">
+              <h3 className="text-lg font-semibold text-primary">Recent Activity</h3>
+              <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">
                 Latest wallet transactions
               </p>
             </div>
             <Link
               to="/transactions"
-              className="flex items-center gap-1.5 text-sm font-medium text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-sm font-medium text-secondary hover:text-primary bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition-all"
             >
               View All <ArrowRight size={14} />
             </Link>
@@ -323,7 +400,7 @@ export function Dashboard() {
                 <Avatar name={t.merchant} size="md" />
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{t.merchant}</p>
+                  <p className="text-sm font-medium text-primary truncate">{t.merchant}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Badge label={t.category.split(' ')[0]} color={getCategoryColor(t.category)} />
                     <span className="text-xs text-gray-500">

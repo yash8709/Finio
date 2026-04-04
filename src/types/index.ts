@@ -35,6 +35,7 @@ export interface FilterState {
   dateTo: string
   sortBy: SortField
   sortOrder: SortOrder
+  minAmount: number
 }
 
 export interface MonthlyData {
@@ -44,7 +45,13 @@ export interface MonthlyData {
   balance: number
 }
 
+// Alias used by insights.ts
+export type CategoryType = Category
+
 export interface InsightData {
+  totalBalance: number
+  totalIncome: number
+  totalExpenses: number
   topCategory: Category
   topCategoryAmount: number
   topCategoryPercentage: number
@@ -55,6 +62,8 @@ export interface InsightData {
   anomalies: AnomalyData[]
   categoryBreakdown: CategoryBreakdown[]
   monthlyData: MonthlyData[]
+  recentTransactions: Transaction[]
+  savingsGoalProgress: number
 }
 
 export interface AnomalyData {
@@ -67,4 +76,60 @@ export interface CategoryBreakdown {
   category: Category
   total: number
   percentage: number
+}
+
+// ─── Health Score Types ──────────────────────────────────
+
+export type HealthGrade = 'A' | 'B' | 'C' | 'D' | 'F'
+
+export interface HealthScoreBreakdownItem {
+  score: number
+  max: number
+  value: number
+}
+
+export interface HealthScoreData {
+  score: number
+  grade: HealthGrade
+  label: string
+  color: string
+  breakdown: {
+    savingsRate: HealthScoreBreakdownItem
+    spendingControl: HealthScoreBreakdownItem
+    categoryBalance: HealthScoreBreakdownItem
+    consistency: HealthScoreBreakdownItem
+  }
+}
+
+// ─── Smart Banner Types ─────────────────────────────────
+
+export type BannerType = 'danger' | 'warning' | 'success' | 'info'
+
+export interface BannerState {
+  type: BannerType
+  icon: string
+  headline: string
+  subline: string
+  color: string
+  bgColor: string
+  borderColor: string
+  dismissible: boolean
+}
+
+// ─── Actionable Insight Types ───────────────────────────
+
+export type InsightSeverity = 'positive' | 'warning' | 'danger' | 'info'
+export type InsightTrend = 'up' | 'down' | 'neutral'
+
+export interface ActionableInsight {
+  id: string
+  severity: InsightSeverity
+  icon: string
+  title: string
+  interpretation: string
+  action: string
+  metric: string
+  metricLabel: string
+  trend: InsightTrend
+  trendValue: string
 }

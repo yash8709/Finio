@@ -6,8 +6,6 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Moon,
-  Sun,
   Users,
 } from 'lucide-react'
 import { Avatar } from '../ui/Avatar'
@@ -92,20 +90,18 @@ function SidebarContent() {
     toggleSidebar,
     role,
     setRole,
-    isDarkMode,
-    toggleDarkMode,
   } = useUIStore()
 
   return (
     <>
       {/* ─── Logo + Branding ──────────────────────────── */}
-      <div className="p-4 flex items-center gap-3 border-b border-white/6 h-16">
+      <div className="p-4 flex items-center gap-3 h-16" style={{ borderBottom: '1px solid var(--divider)' }}>
         <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
           <Sparkles size={18} className="text-white" />
         </div>
         {isSidebarExpanded && (
           <div className="overflow-hidden">
-            <h1 className="text-lg font-bold text-white tracking-tight">Finio</h1>
+            <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Finio</h1>
             <span className="text-[10px] font-medium uppercase tracking-widest text-emerald-400">
               {role}
             </span>
@@ -124,15 +120,16 @@ function SidebarContent() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-lg mx-2
+                flex items-center ${isSidebarExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'} py-2.5 rounded-lg mx-2
                 transition-colors duration-200 group relative
                 border-l-[3px]
                 ${
                   isActive
-                    ? 'bg-emerald-500/10 border-emerald-500 text-white'
-                    : 'text-gray-500 hover:bg-white/[0.04] hover:text-gray-300 border-transparent'
+                    ? 'bg-emerald-500/10 border-emerald-500'
+                    : 'border-transparent hover:bg-white/[0.04]'
                 }
               `}
+              style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-muted)' }}
             >
               <Icon
                 size={20}
@@ -154,78 +151,45 @@ function SidebarContent() {
       </nav>
 
       {/* ─── Sidebar Footer ─────────────────────────────── */}
-      <div className="p-2 border-t border-white/6">
-        {/* ─── Theme Toggle ─────────────────────────────── */}
-        <div className="flex items-center justify-center p-2">
-          <div className="p-1 rounded-lg bg-white/5 flex text-gray-400">
-            <button
-              onClick={() => toggleDarkMode()}
-              className={`p-1.5 rounded-md ${
-                !isDarkMode ? 'bg-white/10 text-white' : ''
-              }`}
-            >
-              <Sun size={16} />
-            </button>
-            <button
-              onClick={() => toggleDarkMode()}
-              className={`p-1.5 rounded-md ${
-                isDarkMode ? 'bg-white/10 text-white' : ''
-              }`}
-            >
-              <Moon size={16} />
-            </button>
-          </div>
-        </div>
-
+      <div className="flex flex-col gap-3 p-2" style={{ borderTop: '1px solid var(--divider)' }}>
         {/* ─── Role Switcher ────────────────────────────── */}
-        <div className="flex items-center justify-center p-2">
-          <div className="p-1 rounded-lg bg-white/5 flex text-gray-400">
-            <button
-              onClick={() => setRole('admin')}
-              className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 ${
-                role === 'admin' ? 'bg-white/10 text-white' : ''
-              }`}
-            >
-              <Users size={14} /> Admin
-            </button>
-            <button
-              onClick={() => setRole('viewer')}
-              className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 ${
-                role === 'viewer' ? 'bg-white/10 text-white' : ''
-              }`}
-            >
-              <Users size={14} /> Viewer
-            </button>
+        {isSidebarExpanded && (
+          <div className="flex items-center justify-center">
+            <div className="p-1 rounded-lg flex" style={{ background: 'var(--input-bg)', color: 'var(--text-muted)' }}>
+              <button
+                onClick={() => setRole('admin')}
+                className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  role === 'admin' ? 'bg-emerald-500/15 text-emerald-400' : ''
+                }`}
+              >
+                <Users size={14} /> Admin
+              </button>
+              <button
+                onClick={() => setRole('viewer')}
+                className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  role === 'viewer' ? 'bg-emerald-500/15 text-emerald-400' : ''
+                }`}
+              >
+                <Users size={14} /> Viewer
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* ─── User Profile ─────────────────────────────── */}
-        <div
-          className={`
-            p-2 flex items-center gap-3
-            ${isSidebarExpanded ? 'bg-white/5 rounded-xl' : ''}
-          `}
-        >
+        {/* ─── User Profile (avatar only — identity is in navbar) ── */}
+        <div className={`flex items-center p-3 border-t border-theme ${
+          isSidebarExpanded ? 'justify-start' : 'justify-center'
+        }`}>
           <Avatar
             name={MOCK_USER.name}
-            size="md"
+            size="sm"
           />
-          {isSidebarExpanded && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-white truncate">
-                {MOCK_USER.name}
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                {MOCK_USER.email}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* ─── Collapse Toggle ──────────────────────────── */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-16 p-1.5 rounded-full bg-emerald-500/50 hover:bg-emerald-500 text-white"
+          className="absolute -right-3 top-16 p-1.5 rounded-full bg-emerald-500/50 hover:bg-emerald-500 text-white cursor-pointer"
         >
           {isSidebarExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>

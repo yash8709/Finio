@@ -193,19 +193,22 @@ for (let i = 0; i < 84; i++) {
 
 // ─── Embed 3 anomalies (>2x typical spend) ──────────────
 // Anomaly 1: Huge shopping spree
-transactions.push(
-  generateTransaction(84, sixMonthsAgo, now, 'expense', 'Shopping', 3.5),
-)
+const anomaly1 = generateTransaction(84, sixMonthsAgo, now, 'expense', 'Shopping', 1)
+anomaly1.date = new Date(now.getFullYear(), now.getMonth(), 1, 15, 0)
+anomaly1.amount = 35000 // Average is ~7.5k, so this is >4x
+transactions.push(anomaly1)
 
 // Anomaly 2: Massive entertainment splurge
-transactions.push(
-  generateTransaction(85, sixMonthsAgo, now, 'expense', 'Entertainment', 4),
-)
+const anomaly2 = generateTransaction(85, sixMonthsAgo, now, 'expense', 'Entertainment', 1)
+anomaly2.date = new Date(now.getFullYear(), now.getMonth(), 2, 10, 30)
+anomaly2.amount = 15000 // Average is ~2.5k, so this is >5x
+transactions.push(anomaly2)
 
 // Anomaly 3: Unexpected health expense
-transactions.push(
-  generateTransaction(86, sixMonthsAgo, now, 'expense', 'Health', 3),
-)
+const anomaly3 = generateTransaction(86, sixMonthsAgo, now, 'expense', 'Health', 1)
+anomaly3.date = new Date(now.getFullYear(), now.getMonth(), 3, 14, 15)
+anomaly3.amount = 45000 // Average is ~5k, so this is >8x
+transactions.push(anomaly3)
 
 // Fill remaining normal transactions
 for (let i = 87; i < 90; i++) {

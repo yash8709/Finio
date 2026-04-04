@@ -1,0 +1,9 @@
+
+> finio@0.0.0 build
+> tsc -b && vite build
+
+src/components/layout/RootLayout.tsx(1,18): error TS6133: 'useLocation' is declared but its value is never read.
+src/data/mockData.ts(123,3): error TS6133: 'startDate' is declared but its value is never read.
+src/data/mockData.ts(124,3): error TS6133: 'endDate' is declared but its value is never read.
+src/pages/Dashboard.tsx(23,1): error TS6133: 'Transaction' is declared but its value is never read.
+src/utils/categoryColors.ts(7,14): error TS2741: Property 'Other' is missing in type '{ 'Food & Dining': string; Transport: string; Entertainment: string; Shopping: string; 'Bills & Utilities': string; Health: string; Subscriptions: string; Salary: string; Freelance: string; }' but required in type 'Record<Category, string>'.

@@ -14,6 +14,7 @@ const NAVBAR_HEIGHT = 64
 export function RootLayout() {
   const { 
     isSidebarExpanded, 
+    isDarkMode,
     role, 
     isViewerBannerDismissed,
     dismissViewerBanner 
@@ -32,9 +33,22 @@ export function RootLayout() {
     ? SIDEBAR_EXPANDED 
     : SIDEBAR_COLLAPSED
 
+  // Glow blob opacities — dimmer in light mode
+  const glowIndigo = isDarkMode
+    ? 'radial-gradient(circle at center, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.05) 40%, transparent 70%)'
+    : 'radial-gradient(circle at center, rgba(99,102,241,0.05) 0%, rgba(99,102,241,0.02) 40%, transparent 70%)'
+
+  const glowEmerald = isDarkMode
+    ? 'radial-gradient(circle at center, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.04) 40%, transparent 70%)'
+    : 'radial-gradient(circle at center, rgba(5,150,105,0.04) 0%, rgba(5,150,105,0.01) 40%, transparent 70%)'
+
+  const glowViolet = isDarkMode
+    ? 'radial-gradient(circle at center, rgba(139,92,246,0.06) 0%, transparent 70%)'
+    : 'radial-gradient(circle at center, rgba(139,92,246,0.02) 0%, transparent 70%)'
+
   return (
     <div className="min-h-screen relative"
-      style={{ backgroundColor: '#080D1A' }}>
+      style={{ backgroundColor: 'var(--bg-base)' }}>
       
       {/* Background glow blobs — MUST be here */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden"
@@ -48,9 +62,10 @@ export function RootLayout() {
           width: '700px',
           height: '700px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle at center, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.05) 40%, transparent 70%)',
+          background: glowIndigo,
           filter: 'blur(60px)',
           transform: 'translateZ(0)',
+          transition: 'background 400ms ease',
         }} />
         
         {/* Emerald blob — bottom left */}
@@ -61,9 +76,10 @@ export function RootLayout() {
           width: '600px',
           height: '600px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle at center, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.04) 40%, transparent 70%)',
+          background: glowEmerald,
           filter: 'blur(60px)',
           transform: 'translateZ(0)',
+          transition: 'background 400ms ease',
         }} />
         
         {/* Subtle violet blob — center */}
@@ -74,9 +90,10 @@ export function RootLayout() {
           width: '400px',
           height: '400px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle at center, rgba(139,92,246,0.06) 0%, transparent 70%)',
+          background: glowViolet,
           filter: 'blur(80px)',
           transform: 'translateZ(0)',
+          transition: 'background 400ms ease',
         }} />
       </div>
       

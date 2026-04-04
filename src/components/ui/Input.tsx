@@ -22,7 +22,7 @@ export function Input({
       {Icon && (
         <Icon
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
         />
       )}
       <input
@@ -31,8 +31,8 @@ export function Input({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={`
-          w-full bg-white/5 border border-white/10 rounded-lg text-sm text-white
-          placeholder:text-white/30
+          w-full bg-[var(--input-bg)] border border-theme rounded-lg text-sm text-primary
+          placeholder:text-muted
           focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20
           transition-all duration-200
           ${Icon ? 'pl-9 pr-3' : 'px-3'} py-2

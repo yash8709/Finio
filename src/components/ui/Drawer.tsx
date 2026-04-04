@@ -28,7 +28,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children }: DrawerPro
           <motion.div
             className="
               fixed top-0 right-0 h-full w-full max-w-md z-50
-              bg-[#0c1120] border-l border-white/6
+              bg-[var(--bg-base)] border-l border-theme
               shadow-2xl shadow-black/50
               flex flex-col
             "
@@ -38,16 +38,16 @@ export function Drawer({ isOpen, onClose, title, subtitle, children }: DrawerPro
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/6">
+            <div className="flex items-center justify-between p-6 border-b border-theme">
               <div>
-                <h2 className="text-xl font-semibold text-white">{title}</h2>
+                <h2 className="text-xl font-semibold text-primary">{title}</h2>
                 {subtitle && (
-                  <p className="text-sm text-white/40 mt-0.5">{subtitle}</p>
+                  <p className="text-sm text-secondary mt-0.5">{subtitle}</p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-[var(--input-bg)] hover:bg-white/10 text-secondary hover:text-primary transition-all cursor-pointer"
               >
                 <X size={18} />
               </button>

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import {
-  AreaChart as RechartsAreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import type { MonthlyData } from '../../types'
@@ -21,22 +23,36 @@ type Period = '1M' | '3M' | '6M'
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null
-  const value = payload[0].value
 
   return (
     <div style={{
-      background:'rgba(8,13,26,0.9)',
-      border:'1px solid rgba(255,255,255,0.1)',
+      background: 'var(--bg-base)',
+      border: '1px solid var(--border-card)',
       borderRadius: 12,
-      padding:'8px 12px'
+      padding: '12px 16px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+      whiteSpace: 'nowrap'
     }}>
       <p style={{
-        fontFamily:'JetBrains Mono',
-        color:'#10B981',fontSize:14
-      }}>{formatINR(value)}</p>
-      <p style={{
-        color:'#6B7280',fontSize:11
+        color: 'var(--text-secondary)',
+        fontSize: 11,
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
       }}>{label}</p>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+            <span style={{ color: entry.color, fontSize: 12, textTransform: 'capitalize' }}>
+              {entry.name}
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }}>
+              {formatINR(entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -57,12 +73,12 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <p className="text-xs text-white/30 uppercase tracking-widest mt-0.5">{subtitle}</p>
+          <h3 className="text-lg font-semibold text-primary">{title}</h3>
+          <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">{subtitle}</p>
         </div>
 
         {/* Period tabs */}
-        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-[var(--input-bg)] rounded-lg p-1">
           {(['1M', '3M', '6M'] as Period[]).map((p) => (
             <button
               key={p}
@@ -70,8 +86,8 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
               className={`
                 px-3 py-1 text-xs rounded-lg transition-all duration-200 cursor-pointer
                 ${period === p
-                  ? 'bg-white/10 text-white font-medium'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'bg-emerald-500/20 text-emerald-400 font-medium'
+                  : 'text-secondary hover:text-primary'
                 }
               `}
             >
@@ -84,26 +100,68 @@ export function AreaChart({ data, title, subtitle }: AreaChartProps) {
       {/* Chart */}
       <div className="flex-1 min-h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsAreaChart data={filteredData} margin={{ top: 10, right: 0, bottom: 0, left: -20 }}>
+          <ComposedChart data={filteredData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
             <defs>
               <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(16,185,129,0.3)" />
-                <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+                <stop offset="0%" stopColor="rgba(56,189,248,0.3)" />
+                <stop offset="100%" stopColor="rgba(56,189,248,0)" />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 11 }} tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+            <XAxis 
+              dataKey="month" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: '#6B7280', fontSize: 11 }} 
+            />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              width={60}
+              tick={{ fill: '#6B7280', fontSize: 12 }} 
+              tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`} 
+            />
+            <Tooltip 
+              content={<CustomTooltip />} 
+              cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} 
+            />
+            <Legend 
+              verticalAlign="top" 
+              align="right" 
+              iconType="circle" 
+              wrapperStyle={{ fontSize: 12, paddingBottom: 16, color: '#9CA3AF', opacity: 0.7 }}
+            />
+            
             <Area
               type="monotone"
               dataKey="balance"
-              stroke="#10B981"
-              strokeWidth={2}
+              name="Balance"
+              stroke="#38BDF8"
+              strokeWidth={3}
               fill="url(#balanceGradient)"
-              activeDot={{ r: 4, fill: "#10B981", stroke: "rgba(16,185,129,0.3)", strokeWidth: 8 }}
+              activeDot={{ r: 4, fill: "#38BDF8", stroke: "rgba(56,189,248,0.3)", strokeWidth: 8 }}
             />
-          </RechartsAreaChart>
+            <Line 
+              type="monotone" 
+              dataKey="income" 
+              name="Income" 
+              stroke="#10B981" 
+              strokeWidth={1.5} 
+              strokeOpacity={0.7}
+              dot={false} 
+              activeDot={{ r: 4, fill: "#10B981", strokeWidth: 0 }} 
+            />
+            <Line 
+              type="monotone" 
+              dataKey="expenses" 
+              name="Expenses" 
+              stroke="#F43F5E" 
+              strokeWidth={1.5} 
+              strokeOpacity={0.7}
+              dot={false} 
+              activeDot={{ r: 4, fill: "#F43F5E", strokeWidth: 0 }} 
+            />
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
     </div>

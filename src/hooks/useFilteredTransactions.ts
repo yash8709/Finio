@@ -50,6 +50,11 @@ export function useFilteredTransactions(): UseFilteredTransactionsReturn {
       result = result.filter((t) => t.date <= to)
     }
 
+    // ─── Min amount filter ─────────────────────────────
+    if (filters.minAmount > 0) {
+      result = result.filter((t) => t.amount >= filters.minAmount)
+    }
+
     // ─── Sort ─────────────────────────────────────────────
     result.sort((a, b) => {
       let comparison = 0
@@ -70,6 +75,7 @@ export function useFilteredTransactions(): UseFilteredTransactionsReturn {
     if (filters.category !== 'all') activeFilterCount++
     if (filters.dateFrom) activeFilterCount++
     if (filters.dateTo) activeFilterCount++
+    if (filters.minAmount > 0) activeFilterCount++
 
     return {
       filteredTransactions: result,

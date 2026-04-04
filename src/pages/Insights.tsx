@@ -1,16 +1,29 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
-  TrendingUp,
   Zap,
   TrendingDown,
   Lightbulb,
+  ShieldCheck,
+  PiggyBank,
+  BarChart3,
+  PieChart,
+  Flame,
+  ShoppingBag,
+  Shield,
+  Trophy,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from 'lucide-react'
 import { GlassCard } from '../components/ui/GlassCard'
+import { HealthScoreGauge } from '../components/ui/HealthScoreGauge'
 import { BarChart } from '../components/charts/BarChart'
 import { SpendingHeatmap } from '../components/charts/SpendingHeatmap'
 import { useInsights } from '../hooks/useInsights'
 import { useTransactionStore } from '../store/transactionStore'
 import { formatINR } from '../utils/formatters'
+import { computeHealthScore, interpretInsights } from '../utils/insights'
 import { getCategoryColor } from '../utils/categoryColors'
 
 // ─── Animation variants ─────────────────────────────────
@@ -39,6 +52,76 @@ export function Insights() {
   const insights = useInsights()
   const transactions = useTransactionStore((s) => s.transactions)
 
+  // ─── Health Score ──────────────────────────────────────
+  const healthScore = useMemo(() => computeHealthScore(transactions), [transactions])
+
+  // ─── Actionable Insights ───────────────────────────────
+  const actionableInsights = useMemo(() => interpretInsights(insights), [insights])
+
+  // Dynamic interpretation text generators
+  function getSavingsText(value: number): string {
+    if (value > 30) return 'Excellent savings discipline'
+    if (value >= 10) return 'Moderate savings — aim for 20%+'
+    return 'Low savings rate — review expenses'
+  }
+
+  function getControlText(value: number): string {
+    if (value < 10) return 'Stable spending month-over-month'
+    if (value <= 25) return 'Some spending variance detected'
+    return 'High variance — spending is inconsistent'
+  }
+
+  function getBalanceText(value: number): string {
+    if (value < 30) return 'Well-distributed spending across categories'
+    if (value <= 45) return 'One category dominates — consider rebalancing'
+    return 'Single category consuming too much budget'
+  }
+
+  function getConsistencyText(value: number): string {
+    if (value >= 3) return `${value} consecutive positive months — great streak`
+    if (value >= 1) return 'Building consistency — keep going'
+    return 'No positive balance months recorded'
+  }
+
+  const breakdownRows = [
+    {
+      label: 'Savings Rate',
+      icon: PiggyBank,
+      data: healthScore.breakdown.savingsRate,
+      color: '#10B981',
+      text: getSavingsText(healthScore.breakdown.savingsRate.value),
+      valueLabel: `${healthScore.breakdown.savingsRate.value}% of income saved`,
+    },
+    {
+      label: 'Spending Control',
+      icon: BarChart3,
+      data: healthScore.breakdown.spendingControl,
+      color: '#818CF8',
+      text: getControlText(healthScore.breakdown.spendingControl.value),
+      valueLabel: `${healthScore.breakdown.spendingControl.value}% MoM variance`,
+    },
+    {
+      label: 'Category Balance',
+      icon: PieChart,
+      data: healthScore.breakdown.categoryBalance,
+      color: '#F59E0B',
+      text: getBalanceText(healthScore.breakdown.categoryBalance.value),
+      valueLabel: `Top category: ${healthScore.breakdown.categoryBalance.value}% of expenses`,
+    },
+    {
+      label: 'Consistency',
+      icon: Flame,
+      data: healthScore.breakdown.consistency,
+      color: '#34D399',
+      text: getConsistencyText(healthScore.breakdown.consistency.value),
+      valueLabel: `${healthScore.breakdown.consistency.value} positive months`,
+    },
+  ]
+
+  // ─── Icon maps for actionable cards ────────────────────
+  const INSIGHT_ICON_MAP = { ShoppingBag, Shield, Trophy } as const
+  type InsightIconName = keyof typeof INSIGHT_ICON_MAP
+
   return (
     <motion.div
       className="space-y-6"
@@ -48,115 +131,172 @@ export function Insights() {
       exit="exit"
       transition={{ duration: 0.2, ease: 'easeOut' }}
     >
-      {/* ─── Top 3 Insight Cards ────────────────────────── */}
+      {/* ─── Health Score Breakdown ──────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <GlassCard className="p-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="p-2 rounded-xl" style={{ background: `${healthScore.color}1A` }}>
+              <ShieldCheck className="w-5 h-5" style={{ color: healthScore.color }} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-primary">Financial Health Score</h3>
+              <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">
+                Comprehensive assessment of your financial habits
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-8 items-center">
+            {/* Left — Large Gauge */}
+            <div className="flex flex-col items-center lg:min-w-[280px] shrink-0">
+              <HealthScoreGauge data={healthScore} size="large" />
+              <div className="mt-2 flex items-center gap-2">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: healthScore.color }}
+                />
+                <span className="text-sm font-medium" style={{ color: healthScore.color }}>
+                  Grade {healthScore.grade}
+                </span>
+                <span className="text-xs text-secondary">·</span>
+                <span className="text-sm text-secondary">{healthScore.label}</span>
+              </div>
+            </div>
+
+            {/* Right — Breakdown Rows */}
+            <div className="flex-1 w-full space-y-4">
+              {breakdownRows.map((row, idx) => {
+                const Icon = row.icon
+                const progressPercent = (row.data.score / row.data.max) * 100
+                return (
+                  <motion.div
+                    key={row.label}
+                    className="group"
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, delay: 0.2 + idx * 0.08, ease: 'easeOut' }}
+                  >
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <div
+                        className="p-1.5 rounded-lg shrink-0"
+                        style={{ background: `${row.color}15` }}
+                      >
+                        <Icon size={14} style={{ color: row.color }} />
+                      </div>
+                      <span className="text-sm font-medium text-secondary flex-1">{row.label}</span>
+                      <span
+                        className="font-mono tabular-nums text-sm font-bold"
+                        style={{ color: row.color }}
+                      >
+                        {row.data.score}<span className="text-secondary font-normal">/{row.data.max}</span>
+                      </span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-1.5">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: row.color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 0.7, delay: 0.3 + idx * 0.1, ease: 'easeOut' }}
+                      />
+                    </div>
+
+                    {/* Interpretation text */}
+                    <p className="text-xs text-secondary leading-relaxed">{row.text}</p>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* ─── Actionable Insight Cards ────────────────── */}
       <motion.div
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
         variants={staggerContainer}
         initial="initial"
         animate="animate"
       >
-        {/* Card 1 — Top Expenditure */}
-        <motion.div variants={cardVariant} className="flex flex-col h-full">
-          <GlassCard hoverable className="p-5 h-full flex flex-col justify-between" style={{ borderLeft: '3px solid #10B981', background: 'rgba(16,185,129,0.03)' }}>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-white/30 mb-2">
-                Top Expenditure
-              </p>
-              <h3 className="text-xl font-semibold text-white mb-1">
-                {insights.topCategory}
-              </h3>
-              <p className="font-mono text-lg font-bold text-white/80">
-                {formatINR(insights.topCategoryAmount)}
-                <span className="text-xs text-white/30 font-sans font-normal">/mo</span>
-              </p>
-            </div>
+        {actionableInsights.map((insight) => {
+          const severityColor = {
+            positive: '#10B981',
+            warning: '#F59E0B',
+            danger: '#FB7185',
+            info: '#818CF8',
+          }[insight.severity]
 
-            <div className="mt-auto pt-4">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-white/30">Budget Utilization</span>
-                <span className="font-mono text-emerald-400">{insights.topCategoryPercentage}%</span>
+          const IconComponent = INSIGHT_ICON_MAP[insight.icon as InsightIconName] || ShoppingBag
+
+          const TrendIcon = insight.trend === 'up'
+            ? ArrowUpRight
+            : insight.trend === 'down'
+              ? ArrowDownRight
+              : Minus
+
+          const trendBadgeColor = insight.trend === 'up'
+            ? (insight.severity === 'danger' || insight.severity === 'warning' ? '#FB7185' : '#10B981')
+            : insight.trend === 'down'
+              ? (insight.severity === 'positive' ? '#10B981' : '#FB7185')
+              : '#9CA3AF'
+
+          return (
+            <motion.div key={insight.id} variants={cardVariant} className="flex flex-col h-full">
+              <div className="glass-card p-5 h-full flex flex-col">
+                {/* Top row: icon + trend badge */}
+                <div className="flex items-center justify-between mb-3">
+                  <div
+                    className="p-2 rounded-xl"
+                    style={{ background: `${severityColor}15` }}
+                  >
+                    <span style={{ color: severityColor, display: 'flex' }}>
+                      <IconComponent size={18} />
+                    </span>
+                  </div>
+                  <div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                    style={{ background: `${trendBadgeColor}15`, color: trendBadgeColor }}
+                  >
+                    <TrendIcon size={12} />
+                    <span className="font-mono tabular-nums text-[11px]">{insight.trendValue}</span>
+                  </div>
+                </div>
+
+                {/* Metric */}
+                <p
+                  className="font-mono tabular-nums text-3xl font-bold mb-0.5"
+                  style={{ color: severityColor }}
+                >
+                  {insight.metric}
+                </p>
+                <p className="text-xs text-secondary mb-3">{insight.metricLabel}</p>
+
+                {/* Divider */}
+                <div className="border-t border-white/5 my-3" />
+
+                {/* Title + interpretation */}
+                <h4 className="text-sm font-semibold text-primary mb-1.5">{insight.title}</h4>
+                <p className="text-xs text-secondary leading-relaxed flex-1">
+                  {insight.interpretation}
+                </p>
+
+                {/* Action pill */}
+                <div className="mt-3">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-secondary">
+                    <Lightbulb size={11} className="text-amber-400 shrink-0" />
+                    <span className="leading-snug">{insight.action}</span>
+                  </div>
+                </div>
               </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-emerald-500 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(insights.topCategoryPercentage, 100)}%` }}
-                  transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-                />
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        {/* Card 2 — Runway Projection */}
-        <motion.div variants={cardVariant} className="flex flex-col h-full">
-          <GlassCard hoverable className="p-5 h-full flex flex-col justify-between" style={{ borderLeft: '3px solid #818CF8', background: 'rgba(129,140,248,0.03)' }}>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-white/30 mb-2">
-                Runway Projection
-              </p>
-              <h3 className="text-xl font-semibold text-indigo-400 mb-3">
-                <span className="font-mono text-2xl font-bold">{insights.runwayMonths}</span>{' '}
-                <span className="text-base">months</span>
-              </h3>
-            </div>
-
-            <div className="mt-auto pt-4">
-              <div className="flex items-center gap-2 text-white/40">
-                <TrendingUp size={14} className="text-indigo-400" />
-                <span className="text-[10px] uppercase tracking-widest">Surplus Forecast</span>
-              </div>
-              <p className="font-mono text-lg font-bold text-white mt-1">
-                {formatINR(insights.surplusForecast)}
-              </p>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        {/* Card 3 — Performance Peak */}
-        <motion.div variants={cardVariant} className="flex flex-col h-full">
-          <GlassCard hoverable className="p-5 h-full flex flex-col justify-between" style={{ borderLeft: '3px solid #F59E0B', background: 'rgba(245,158,11,0.03)' }}>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-white/30 mb-2">
-                Performance Peak
-              </p>
-              <h3 className="text-xl font-semibold text-white mb-1">
-                {insights.bestMonth} {new Date().getFullYear()}
-              </h3>
-              <p className="text-sm text-white/40">
-                <span className="font-mono text-white/60">{formatINR(insights.bestMonthSavings)}</span>{' '}
-                net savings
-              </p>
-            </div>
-
-            {/* Mini sparkline bars */}
-            <div className="mt-auto pt-4">
-              <div className="flex items-end gap-[3px] h-10">
-                {insights.monthlyData.map((m, i) => {
-                  const maxBalance = Math.max(
-                    ...insights.monthlyData.map((d) => Math.abs(d.balance)),
-                    1,
-                  )
-                  const height = Math.max((Math.abs(m.balance) / maxBalance) * 100, 8)
-                  const isBest = m.month === insights.bestMonth
-
-                  return (
-                    <motion.div
-                      key={i}
-                      className="flex-1 rounded-sm"
-                      initial={{ height: 0 }}
-                      animate={{ height: `${height}%` }}
-                      transition={{ duration: 0.5, delay: 0.3 + i * 0.05, ease: 'easeOut' }}
-                      style={{
-                        backgroundColor: isBest ? '#F59E0B' : 'rgba(255,255,255,0.08)',
-                      }}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
+            </motion.div>
+          )
+        })}
       </motion.div>
 
       {/* ─── Income vs Expenses BarChart ────────────────── */}
@@ -181,22 +321,22 @@ export function Insights() {
       >
         {/* Left — Category Distribution */}
         <GlassCard className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-1">Category Distribution</h3>
-          <p className="text-xs text-white/30 uppercase tracking-widest mb-6">
+          <h3 className="text-lg font-semibold text-primary mb-1">Category Distribution</h3>
+          <p className="text-xs text-secondary uppercase tracking-widest mb-6">
             Expense breakdown by category
           </p>
 
           {/* Table header */}
           <div className="grid grid-cols-[1fr_120px_1fr_60px] gap-4 mb-3 px-1">
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
               Category
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
               Total Spent
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium">
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-medium text-right">
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">
               % of Total
             </span>
           </div>
@@ -214,11 +354,11 @@ export function Insights() {
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: getCategoryColor(cat.category) }}
                   />
-                  <span className="text-sm text-white/80">{cat.category}</span>
+                  <span className="text-sm text-secondary">{cat.category}</span>
                 </div>
 
                 {/* Total */}
-                <span className="font-mono text-sm text-white font-medium">
+                <span className="font-mono text-sm text-primary font-medium">
                   {formatINR(cat.total)}
                 </span>
 
@@ -234,7 +374,7 @@ export function Insights() {
                 </div>
 
                 {/* Percentage */}
-                <span className="font-mono text-xs text-white/40 text-right">
+                <span className="font-mono text-xs text-secondary text-right">
                   {cat.percentage}%
                 </span>
               </div>
@@ -245,7 +385,7 @@ export function Insights() {
         {/* Right — Insights Alerts */}
         <div className="space-y-4">
           <GlassCard className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Insights Alerts</h3>
+            <h3 className="text-lg font-semibold text-primary mb-4">Insights Alerts</h3>
 
             <div className="space-y-3">
               {insights.anomalies.slice(0, 3).map((anomaly, i) => (
@@ -266,7 +406,7 @@ export function Insights() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-semibold text-white">
+                        <h4 className="text-sm font-semibold text-primary">
                           Unusual Spend
                         </h4>
                         <span className="text-[10px] tabular-nums font-bold px-1.5 py-0.5 rounded text-rose-400"
@@ -274,7 +414,7 @@ export function Insights() {
                           {anomaly.multiplier}x
                         </span>
                       </div>
-                      <p className="text-xs text-white/40 leading-relaxed">
+                      <p className="text-xs text-secondary leading-relaxed">
                         {anomaly.transaction.category} expenses are{' '}
                         <span className="text-rose-400 font-semibold underline decoration-rose-400/30">
                           {anomaly.multiplier}x higher
@@ -296,11 +436,11 @@ export function Insights() {
                 Pro-Tip
               </span>
             </div>
-            <h4 className="text-sm font-semibold text-white mb-1.5">
+            <h4 className="text-sm font-semibold text-primary mb-1.5">
               Optimize Your Spending
             </h4>
-            <p className="text-xs text-white/40 leading-relaxed mb-3">
-              By reducing your <span className="text-white/70">{insights.topCategory}</span> spending by 20%,
+            <p className="text-xs text-secondary leading-relaxed mb-3">
+              By reducing your <span className="text-secondary">{insights.topCategory}</span> spending by 20%,
               you could save an extra:
             </p>
             <p className="font-mono text-xl font-bold text-emerald-400">
@@ -319,8 +459,8 @@ export function Insights() {
       >
         <GlassCard className="p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white">Spending Activity</h3>
-            <p className="text-xs text-white/30 uppercase tracking-widest mt-0.5">
+            <h3 className="text-lg font-semibold text-primary">Spending Activity</h3>
+            <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">
               Last 6 weeks
             </p>
           </div>

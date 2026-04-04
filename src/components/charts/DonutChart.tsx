@@ -37,9 +37,9 @@ function CustomTooltip({ active, payload, coordinate, viewBox }: any) {
       pointerEvents: 'none',
       whiteSpace: 'nowrap'
     }}>
-      <p style={{ color:'#6B7280', fontSize:11, marginBottom: 2 }}>{item.category}</p>
-      <p style={{ fontFamily:'JetBrains Mono', color:'#fff', fontSize:14 }}>{formatINR(item.total)}</p>
-      <p style={{ color:'#6B7280', fontSize:11, marginTop: 2 }}>{item.percentage}% of total</p>
+      <p style={{ color:'var(--text-secondary)', fontSize:11, marginBottom: 2 }}>{item.category}</p>
+      <p style={{ fontFamily:'JetBrains Mono', color:'var(--text-primary)', fontSize:14 }}>{formatINR(item.total)}</p>
+      <p style={{ color:'var(--text-secondary)', fontSize:11, marginTop: 2 }}>{item.percentage}% of total</p>
     </div>
   )
 }
@@ -62,8 +62,8 @@ export function DonutChart({ data, title, subtitle }: DonutChartProps) {
     <div className="glass-card p-6 flex flex-col h-full">
       {/* Header */}
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="text-xs text-gray-500 uppercase tracking-widest mt-0.5">{subtitle}</p>
+        <h3 className="text-lg font-semibold text-primary">{title}</h3>
+        <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">{subtitle}</p>
       </div>
 
       {/* Chart + center label */}
@@ -92,8 +92,8 @@ export function DonutChart({ data, title, subtitle }: DonutChartProps) {
 
         {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xs text-gray-500 uppercase tracking-widest">TOTAL</span>
-          <span className="text-xl text-white mt-1 tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
+          <span className="text-xs text-secondary uppercase tracking-widest">TOTAL</span>
+          <span className="text-xl text-primary mt-1 tabular-nums" style={{fontFamily:'JetBrains Mono'}}>
             {formatINR(totalExpenses)}
           </span>
         </div>
@@ -108,10 +108,10 @@ export function DonutChart({ data, title, subtitle }: DonutChartProps) {
               style={{ backgroundColor: getCategoryColor(entry.category) }}
             />
             <div className="flex justify-between w-full min-w-0">
-              <span className="text-xs text-gray-400 truncate mr-2">
+              <span className="text-xs text-secondary truncate mr-2">
                 {entry.category.length > 12 ? entry.category.split(' ')[0] : entry.category}
               </span>
-              <span className="text-xs text-white tabular-nums">{entry.percentage}%</span>
+              <span className="text-xs text-primary tabular-nums">{entry.percentage}%</span>
             </div>
           </div>
         ))}
