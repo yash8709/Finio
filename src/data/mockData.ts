@@ -120,8 +120,7 @@ const INCOME_CATEGORIES: Category[] = ['Salary', 'Freelance']
 // ─── Generator ───────────────────────────────────────────
 function generateTransaction(
   index: number,
-  startDate: Date,
-  endDate: Date,
+
   forceType?: 'income' | 'expense',
   forceCategory?: Category,
   forceAmountMultiplier?: number,
@@ -178,41 +177,37 @@ function generateTransaction(
 
 // ─── Build 90 transactions ───────────────────────────────
 const now = new Date()
-const sixMonthsAgo = new Date(
-  now.getFullYear(),
-  now.getMonth() - 6,
-  1,
-)
+
 
 const transactions: Transaction[] = []
 
 // Generate 84 normal transactions
 for (let i = 0; i < 84; i++) {
-  transactions.push(generateTransaction(i, sixMonthsAgo, now))
+  transactions.push(generateTransaction(i))
 }
 
 // ─── Embed 3 anomalies (>2x typical spend) ──────────────
 // Anomaly 1: Huge shopping spree
-const anomaly1 = generateTransaction(84, sixMonthsAgo, now, 'expense', 'Shopping', 1)
+const anomaly1 = generateTransaction(84, 'expense', 'Shopping', 1)
 anomaly1.date = new Date(now.getFullYear(), now.getMonth(), 1, 15, 0)
 anomaly1.amount = 35000 // Average is ~7.5k, so this is >4x
 transactions.push(anomaly1)
 
 // Anomaly 2: Massive entertainment splurge
-const anomaly2 = generateTransaction(85, sixMonthsAgo, now, 'expense', 'Entertainment', 1)
+const anomaly2 = generateTransaction(85, 'expense', 'Entertainment', 1)
 anomaly2.date = new Date(now.getFullYear(), now.getMonth(), 2, 10, 30)
 anomaly2.amount = 15000 // Average is ~2.5k, so this is >5x
 transactions.push(anomaly2)
 
 // Anomaly 3: Unexpected health expense
-const anomaly3 = generateTransaction(86, sixMonthsAgo, now, 'expense', 'Health', 1)
+const anomaly3 = generateTransaction(86, 'expense', 'Health', 1)
 anomaly3.date = new Date(now.getFullYear(), now.getMonth(), 3, 14, 15)
 anomaly3.amount = 45000 // Average is ~5k, so this is >8x
 transactions.push(anomaly3)
 
 // Fill remaining normal transactions
 for (let i = 87; i < 90; i++) {
-  transactions.push(generateTransaction(i, sixMonthsAgo, now))
+  transactions.push(generateTransaction(i))
 }
 
 // ─── Force Current Month Data ────────────────────────────

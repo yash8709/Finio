@@ -55,6 +55,11 @@ export function useFilteredTransactions(): UseFilteredTransactionsReturn {
       result = result.filter((t) => t.amount >= filters.minAmount)
     }
 
+    // ─── Max amount filter ─────────────────────────────
+    if (filters.maxAmount > 0) {
+      result = result.filter((t) => t.amount <= filters.maxAmount)
+    }
+
     // ─── Sort ─────────────────────────────────────────────
     result.sort((a, b) => {
       let comparison = 0
@@ -76,6 +81,8 @@ export function useFilteredTransactions(): UseFilteredTransactionsReturn {
     if (filters.dateFrom) activeFilterCount++
     if (filters.dateTo) activeFilterCount++
     if (filters.minAmount > 0) activeFilterCount++
+    if (filters.maxAmount > 0) activeFilterCount++
+    if (filters.sortBy !== 'date') activeFilterCount++
 
     return {
       filteredTransactions: result,

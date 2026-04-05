@@ -11,6 +11,7 @@ import {
 import { GlassCard } from '../ui/GlassCard'
 import type { MonthlyData } from '../../types'
 import { formatINR } from '../../utils/formatters'
+import { useUIStore } from '../../store/uiStore'
 
 interface BarChartProps {
   data: MonthlyData[]
@@ -67,6 +68,15 @@ function CustomLegend({ payload }: CustomLegendProps) {
 }
 
 export function BarChart({ data, title, subtitle }: BarChartProps) {
+  const isDarkMode = useUIStore((s) => s.isDarkMode)
+
+  const colors = {
+    indigo:   isDarkMode ? '#818CF8' : '#6366F1',
+    rose:     isDarkMode ? '#FB7185' : '#E11D48',
+    gridLine: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    axisText: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+    cursorFill: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)',
+  }
   return (
     <GlassCard className="p-6">
       {/* Header */}
@@ -83,31 +93,31 @@ export function BarChart({ data, title, subtitle }: BarChartProps) {
           <RechartsBarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -15 }} barGap={4} barSize={18}>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.04)"
+              stroke={colors.gridLine}
               vertical={false}
             />
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
+              tick={{ fill: colors.axisText, fontSize: 11 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
+              tick={{ fill: colors.axisText, fontSize: 11 }}
               tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.cursorFill }} />
             <Legend content={<CustomLegend />} />
             <Bar
               dataKey="income"
-              fill="#818CF8"
+              fill={colors.indigo}
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="expenses"
-              fill="#FB7185"
+              fill={colors.rose}
               radius={[4, 4, 0, 0]}
             />
           </RechartsBarChart>

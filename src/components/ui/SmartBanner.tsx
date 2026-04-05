@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   TrendingDown,
@@ -25,22 +25,16 @@ const ICON_MAP = {
 type IconName = keyof typeof ICON_MAP
 
 export function SmartBanner({ banner }: SmartBannerProps) {
-  const [dismissed, setDismissed] = useState(false)
-  const [prevBannerKey, setPrevBannerKey] = useState(banner.headline)
+  // Track which banner type was dismissed — auto-shows if banner type changes
+  const [dismissedType, setDismissedType] = useState<string | null>(null)
 
-  // Re-show when data changes (headline changes = different banner state)
-  useEffect(() => {
-    if (banner.headline !== prevBannerKey) {
-      setDismissed(false)
-      setPrevBannerKey(banner.headline)
-    }
-  }, [banner.headline, prevBannerKey])
+  const isVisible = dismissedType !== banner.type
 
   const Icon = ICON_MAP[banner.icon as IconName] || BarChart2
 
   return (
     <AnimatePresence>
-      {!dismissed && (
+      {isVisible && (
         <motion.div
           initial={{ opacity: 0, height: 0, marginBottom: 0 }}
           animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
@@ -81,7 +75,7 @@ export function SmartBanner({ banner }: SmartBannerProps) {
             {/* Dismiss */}
             {banner.dismissible && (
               <button
-                onClick={() => setDismissed(true)}
+                onClick={() => setDismissedType(banner.type)}
                 className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0 group"
                 aria-label="Dismiss banner"
               >

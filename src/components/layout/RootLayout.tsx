@@ -1,11 +1,11 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { Navbar } from './Navbar'
 import { useUIStore } from '../../store/uiStore'
 import { useTransactionStore } from '../../store/transactionStore'
 import { mockTransactions } from '../../data/mockData'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const SIDEBAR_EXPANDED = 240
 const SIDEBAR_COLLAPSED = 72
@@ -20,14 +20,17 @@ export function RootLayout() {
     dismissViewerBanner 
   } = useUIStore()
   
-  const { transactions, setTransactions } = useTransactionStore()
+  const { setTransactions } = useTransactionStore()
   
   // Initialize mock data ONCE
+  const initialized = useRef(false)
   useEffect(() => {
-    if (transactions.length === 0) {
+    if (!initialized.current) {
       setTransactions(mockTransactions)
+      initialized.current = true
     }
-  }, [setTransactions, transactions.length])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   
   const sidebarWidth = isSidebarExpanded 
     ? SIDEBAR_EXPANDED 

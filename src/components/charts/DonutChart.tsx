@@ -5,6 +5,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts'
+import type { TooltipProps } from 'recharts'
+import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent'
 import type { CategoryBreakdown } from '../../types'
 import { formatINR } from '../../utils/formatters'
 
@@ -14,13 +16,13 @@ interface DonutChartProps {
   subtitle: string
 }
 
-function CustomTooltip({ active, payload, coordinate, viewBox }: any) {
+function CustomTooltip({ active, payload, coordinate, viewBox }: TooltipProps<ValueType, NameType>) {
   if (!active || !payload || !payload.length) return null
   const item = payload[0].payload
   
   // Safely get center X to determine if hovering left or right side
   const cx = viewBox?.width ? viewBox.width / 2 : 150
-  const isLeft = coordinate?.x < cx
+  const isLeft = (coordinate?.x ?? 0) < cx
   
   // Push left if on left hemisphere, push right if on right hemisphere
   const transform = isLeft 
@@ -30,8 +32,8 @@ function CustomTooltip({ active, payload, coordinate, viewBox }: any) {
   return (
     <div style={{
       transform,
-      background:'rgba(8,13,26,0.9)',
-      border:'1px solid rgba(255,255,255,0.1)',
+      background:'var(--bg-base)',
+      border:'1px solid var(--border-card)',
       borderRadius: 12,
       padding:'8px 12px',
       pointerEvents: 'none',

@@ -14,6 +14,7 @@ export const CATEGORY_COLORS: Record<CategoryType, string> = {
   'Subscriptions': '#F472B6',
   'Salary': '#10B981',
   'Freelance': '#6EE7B7',
+  'Other': '#9CA3AF',
 }
 
 /**

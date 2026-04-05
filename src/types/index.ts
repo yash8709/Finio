@@ -36,6 +36,7 @@ export interface FilterState {
   sortBy: SortField
   sortOrder: SortOrder
   minAmount: number
+  maxAmount: number
 }
 
 export interface MonthlyData {

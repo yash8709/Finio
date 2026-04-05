@@ -575,137 +575,196 @@ export function Transactions() {
         </GlassCard>
       ) : (
         <GlassCard className="overflow-hidden">
-          {/* Table header */}
-          <div className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-6 py-3 border-b border-white/6">
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Date</span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Merchant</span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Category</span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Type</span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Amount</span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Actions</span>
+          {/* ─── Desktop Table (hidden on mobile) ────────── */}
+          <div className="hidden md:block">
+            {/* Table header */}
+            <div className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-6 py-3 border-b border-white/6">
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Date</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Merchant</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Category</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">Type</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Amount</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">Actions</span>
+            </div>
+
+            {/* Table body */}
+            <motion.div
+              className="divide-y divide-white/[0.03]"
+              variants={listVariants}
+              initial="hidden"
+              animate="show"
+              key={JSON.stringify(filters)}
+            >
+              {paginatedTransactions.map((t) => (
+                <motion.div key={t.id} variants={rowVariants}>
+                  {/* Main row */}
+                  <div
+                    className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-4 py-3 items-center group hover:bg-white/[0.03] border-b border-white/[0.04] cursor-pointer transition-colors duration-150"
+                    onClick={() => setExpandedRowId(expandedRowId === t.id ? null : t.id)}
+                  >
+                    {/* Date */}
+                    <div className="flex flex-col">
+                      <span className="text-sm text-primary font-mono">
+                        {formatDate(t.date, 'dd MMM')}
+                      </span>
+                      <span className="text-xs text-secondary">
+                        {formatDate(t.date, 'h:mm a')}
+                      </span>
+                    </div>
+
+                    {/* Merchant */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar name={t.merchant} size="sm" />
+                      <span className="text-sm text-primary truncate">{t.merchant}</span>
+                    </div>
+
+                    {/* Category */}
+                    <Badge label={t.category.split('&')[0].trim()} category={t.category} size="sm" />
+
+                    {/* Type */}
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full w-fit ${
+                      t.type === 'income'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-rose-500/10 text-rose-400'
+                    }`}>
+                      {t.type === 'income' ? 'Income' : 'Expense'}
+                    </span>
+
+                    {/* Amount */}
+                    <span className={`font-mono font-semibold text-sm text-right ${
+                      t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                    }`}>
+                      {t.type === 'income' ? '+' : '-'} {formatINR(t.amount)}
+                    </span>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {role === 'admin' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setFormAmount(t.amount.toString())
+                              setFormMerchant(t.merchant)
+                              setFormCategory(t.category)
+                              setFormType(t.type)
+                              setFormDate(formatDate(t.date, 'yyyy-MM-dd'))
+                              setFormDescription(t.description)
+                              toggleDrawer()
+                            }}
+                            className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/5 transition-all cursor-pointer"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteTransaction(t.id)
+                            }}
+                            className="p-1.5 rounded-lg text-secondary hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expanded row */}
+                  <AnimatePresence>
+                    {expandedRowId === t.id && (
+                      <motion.div
+                        className="px-6 pb-4 pt-1 bg-white/[0.01] border-t border-white/[0.03] overflow-hidden"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                      >
+                        <div className="grid grid-cols-3 gap-6 text-sm py-2">
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
+                              Description
+                            </span>
+                            <p className="text-secondary">{t.description}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
+                              Transaction ID
+                            </span>
+                            <p className="font-mono text-secondary text-xs">{t.id.slice(0, 12)}...</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
+                              Full Date
+                            </span>
+                            <p className="text-secondary">
+                              {formatDate(t.date, 'EEEE, dd MMMM yyyy • hh:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
 
-          {/* Table body */}
-          <motion.div
-            className="divide-y divide-white/[0.03]"
-            variants={listVariants}
-            initial="hidden"
-            animate="show"
-            key={JSON.stringify(filters)}
-          >
+          {/* ─── Mobile Card List (hidden on desktop) ─────── */}
+          <div className="md:hidden divide-y divide-white/[0.04]">
             {paginatedTransactions.map((t) => (
-              <motion.div key={t.id} variants={rowVariants}>
-                {/* Main row */}
-                <div
-                  className="grid grid-cols-[90px_1fr_130px_100px_110px_80px] gap-4 px-4 py-3 items-center group hover:bg-white/[0.03] border-b border-white/[0.04] cursor-pointer transition-colors duration-150"
-                  onClick={() => setExpandedRowId(expandedRowId === t.id ? null : t.id)}
-                >
-                  {/* Date */}
-                  <div className="flex flex-col">
-                    <span className="text-sm text-primary font-mono">
-                      {formatDate(t.date, 'dd MMM')}
-                    </span>
-                    <span className="text-xs text-secondary">
-                      {formatDate(t.date, 'h:mm a')}
-                    </span>
-                  </div>
-
-                  {/* Merchant */}
+              <div key={t.id} className="p-4">
+                {/* Row 1: merchant + amount */}
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={t.merchant} size="sm" />
-                    <span className="text-sm text-primary truncate">{t.merchant}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">
+                        {t.merchant}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {formatDate(t.date, 'dd MMM yyyy')}
+                      </p>
+                    </div>
                   </div>
-
-                  {/* Category */}
-                  <Badge label={t.category.split('&')[0].trim()} category={t.category} size="sm" />
-
-                  {/* Type */}
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full w-fit ${
-                    t.type === 'income'
-                      ? 'bg-emerald-500/10 text-emerald-400'
-                      : 'bg-rose-500/10 text-rose-400'
-                  }`}>
-                    {t.type === 'income' ? 'Income' : 'Expense'}
-                  </span>
-
-                  {/* Amount */}
-                  <span className={`font-mono font-semibold text-sm text-right ${
+                  <span className={`font-mono text-sm font-semibold shrink-0 ml-3 ${
                     t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
-                    {t.type === 'income' ? '+' : '-'} {formatINR(t.amount)}
+                    {t.type === 'income' ? '+' : '-'}{formatINR(t.amount)}
                   </span>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    {role === 'admin' && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setFormAmount(t.amount.toString())
-                            setFormMerchant(t.merchant)
-                            setFormCategory(t.category)
-                            setFormType(t.type)
-                            setFormDate(formatDate(t.date, 'yyyy-MM-dd'))
-                            setFormDescription(t.description)
-                            toggleDrawer()
-                          }}
-                          className="p-1.5 rounded-lg text-secondary hover:text-primary hover:bg-white/5 transition-all cursor-pointer"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteTransaction(t.id)
-                          }}
-                          className="p-1.5 rounded-lg text-secondary hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </div>
 
-                {/* Expanded row */}
-                <AnimatePresence>
-                  {expandedRowId === t.id && (
-                    <motion.div
-                      className="px-6 pb-4 pt-1 bg-white/[0.01] border-t border-white/[0.03] overflow-hidden"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                    >
-                      <div className="grid grid-cols-3 gap-6 text-sm py-2">
-                        <div>
-                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
-                            Description
-                          </span>
-                          <p className="text-secondary">{t.description}</p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
-                            Transaction ID
-                          </span>
-                          <p className="font-mono text-secondary text-xs">{t.id.slice(0, 12)}...</p>
-                        </div>
-                        <div>
-                          <span className="text-[10px] uppercase tracking-widest text-secondary block mb-1">
-                            Full Date
-                          </span>
-                          <p className="text-secondary">
-                            {formatDate(t.date, 'EEEE, dd MMMM yyyy • hh:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
+                {/* Row 2: category badge + admin actions */}
+                <div className="flex items-center justify-between">
+                  <Badge label={t.category.split('&')[0].trim()} category={t.category} size="sm" />
+                  {role === 'admin' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setFormAmount(t.amount.toString())
+                          setFormMerchant(t.merchant)
+                          setFormCategory(t.category)
+                          setFormType(t.type)
+                          setFormDate(formatDate(t.date, 'yyyy-MM-dd'))
+                          setFormDescription(t.description)
+                          toggleDrawer()
+                        }}
+                        className="text-xs text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => deleteTransaction(t.id)}
+                        className="text-xs text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   )}
-                </AnimatePresence>
-              </motion.div>
+                </div>
+              </div>
             ))}
-          </motion.div>
+          </div>
 
           {/* ─── Pagination ────────────────────────────── */}
           {totalPages > 1 && (

@@ -20,7 +20,7 @@ import { useInsights } from '../hooks/useInsights'
 import { formatINR } from '../utils/formatters'
 import { computeHealthScore } from '../utils/insights'
 import { getBannerState } from '../utils/getBannerState'
-import type { Transaction } from '../types'
+
 import { useTransactionStore } from '../store/transactionStore'
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns'
 

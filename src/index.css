@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
 /* ─── DARK MODE (default) ─────────────────────────────── */
 :root {
@@ -195,9 +195,3 @@ input:focus-visible {
 
 /* ─── Theme-aware divider ────────────────────────────── */
 .border-theme { border-color: var(--divider); }
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}

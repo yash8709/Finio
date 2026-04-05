@@ -27,6 +27,7 @@ const DEFAULT_FILTERS: FilterState = {
   sortBy: 'date' as SortField,
   sortOrder: 'desc' as SortOrder,
   minAmount: 0,
+  maxAmount: 0,
 }
 
 export const useTransactionStore = create<TransactionState & TransactionActions>((set) => ({
