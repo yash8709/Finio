@@ -10,7 +10,6 @@ import {
 } from 'recharts'
 import { GlassCard } from '../ui/GlassCard'
 import type { MonthlyData } from '../../types'
-import { formatINR } from '../../utils/formatters'
 import { useUIStore } from '../../store/uiStore'
 
 interface BarChartProps {
@@ -26,20 +25,32 @@ interface CustomTooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (!active || !payload || !payload.length) return null
+  const isDarkMode = useUIStore((s) => s.isDarkMode)
+  
+  const tooltipBg = isDarkMode ? 'rgba(15,20,40,0.95)' : 'rgba(255,255,255,0.98)'
+  const tooltipBorder = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
+  const tooltipText = isDarkMode ? '#F9FAFB' : '#0F172A'
+
+  if (!active || !payload?.length) return null
 
   return (
-    <div className="bg-[var(--bg-base)] border border-theme rounded-xl px-4 py-3 shadow-xl shadow-black/40">
-      <p className="text-xs text-secondary mb-2 font-medium">{label}</p>
-      {payload.map((entry, index) => (
-        <div key={index} className="flex items-center gap-2 text-sm">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: entry.fill }}
-          />
-          <span className="text-secondary capitalize">{entry.dataKey}:</span>
-          <span className="font-mono font-semibold text-primary">{formatINR(entry.value)}</span>
-        </div>
+    <div style={{
+      background: tooltipBg,
+      border: `1px solid ${tooltipBorder}`,
+      borderRadius: 12,
+      padding: '10px 14px',
+    }}>
+      <p style={{ color: tooltipText, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+        {label}
+      </p>
+      {payload.map((entry: any) => (
+        <p key={entry.name || entry.dataKey} style={{ 
+          color: entry.color || entry.fill, 
+          fontSize: 12,
+          fontFamily: 'JetBrains Mono, monospace'
+        }}>
+          {entry.name || entry.dataKey}: ₹{entry.value?.toLocaleString('en-IN')}
+        </p>
       ))}
     </div>
   )
@@ -73,10 +84,13 @@ export function BarChart({ data, title, subtitle }: BarChartProps) {
   const colors = {
     indigo:   isDarkMode ? '#818CF8' : '#6366F1',
     rose:     isDarkMode ? '#FB7185' : '#E11D48',
-    gridLine: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
-    axisText: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+    gridLine: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)',
+    axisText: isDarkMode ? '#818CF8' : '#94A3B8', // we'll use #4B5563 for dark mode but user selected 818CF8 for indigo. Actually let's use the explicit ones for grid and axis
     cursorFill: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)',
   }
+  
+  const axisColor = isDarkMode ? '#4B5563' : '#94A3B8'
+  const gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'
   return (
     <GlassCard className="p-6">
       {/* Header */}
@@ -91,22 +105,23 @@ export function BarChart({ data, title, subtitle }: BarChartProps) {
       <div style={{ height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
           <RechartsBarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -15 }} barGap={4} barSize={18}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={colors.gridLine}
-              vertical={false}
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke={gridColor} 
+              vertical={false} 
             />
-            <XAxis
+            <XAxis 
               dataKey="month"
-              axisLine={false}
+              tick={{ fill: axisColor, fontSize: 12 }}
+              axisLine={{ stroke: gridColor }}
               tickLine={false}
-              tick={{ fill: colors.axisText, fontSize: 11 }}
             />
             <YAxis
+              tick={{ fill: axisColor, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: colors.axisText, fontSize: 11 }}
-              tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => `₹${v/1000}k`}
+              width={55}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.cursorFill }} />
             <Legend content={<CustomLegend />} />

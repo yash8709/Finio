@@ -25,6 +25,9 @@ import { useTransactionStore } from '../store/transactionStore'
 import { formatINR } from '../utils/formatters'
 import { computeHealthScore, interpretInsights } from '../utils/insights'
 import { getCategoryColor } from '../utils/categoryColors'
+import { useUIStore } from '../store/uiStore'
+import { useNavigate } from 'react-router-dom'
+import { EmptyState } from '../components/ui/EmptyState'
 
 // ─── Animation variants ─────────────────────────────────
 const pageVariants = {
@@ -49,11 +52,38 @@ const cardVariant = {
 }
 
 export function Insights() {
+  const isDarkMode = useUIStore((s) => s.isDarkMode)
+  const trackColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+
   const insights = useInsights()
   const transactions = useTransactionStore((s) => s.transactions)
+  const navigate = useNavigate()
 
   // ─── Health Score ──────────────────────────────────────
   const healthScore = useMemo(() => computeHealthScore(transactions), [transactions])
+
+  if (transactions.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center min-h-[60vh]"
+      >
+        <div className="glass-card rounded-2xl p-8 max-w-md w-full mx-4">
+          <EmptyState
+            size="lg"
+            icon={<BarChart3 size={32} />}
+            title="No data to analyze"
+            description="Add some transactions to see your financial insights, health score, and spending patterns."
+            action={{
+              label: "Go to Transactions",
+              onClick: () => navigate('/transactions')
+            }}
+          />
+        </div>
+      </motion.div>
+    )
+  }
 
   // ─── Actionable Insights ───────────────────────────────
   const actionableInsights = useMemo(() => interpretInsights(insights), [insights])
@@ -197,7 +227,7 @@ export function Insights() {
                     </div>
 
                     {/* Progress bar */}
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-1.5">
+                    <div className="h-2 rounded-full overflow-hidden mb-1.5" style={{ backgroundColor: trackColor }}>
                       <motion.div
                         className="h-full rounded-full"
                         style={{ backgroundColor: row.color }}
@@ -327,58 +357,70 @@ export function Insights() {
           </p>
 
           {/* Table header */}
-          <div className="grid grid-cols-[1fr_120px_1fr_60px] gap-4 mb-3 px-1">
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
+          <div className="flex items-center gap-2 pb-2 border-b border-white/5 mb-1 px-1">
+            <span className="text-xs text-secondary uppercase tracking-wide w-[120px] sm:w-[140px] flex-shrink-0">
               Category
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
+            <span className="text-xs text-secondary uppercase tracking-wide w-[90px] flex-shrink-0">
               Total Spent
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium">
+            {/* Progress header hidden on mobile */}
+            <span className="hidden sm:block text-xs text-secondary uppercase tracking-wide flex-1">
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary font-medium text-right">
-              % of Total
+            <span className="text-xs text-secondary uppercase tracking-wide flex-shrink-0 ml-auto">
+              %
             </span>
           </div>
 
           {/* Category rows */}
           <div className="space-y-3">
-            {insights.categoryBreakdown.map((cat, idx) => (
-              <div
-                key={cat.category}
-                className="grid grid-cols-[1fr_120px_1fr_60px] gap-4 items-center px-1 py-1.5 rounded-lg hover:bg-white/[0.02] transition-colors"
-              >
-                {/* Category name + dot */}
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: getCategoryColor(cat.category) }}
-                  />
-                  <span className="text-sm text-secondary">{cat.category}</span>
+            {insights.categoryBreakdown.length === 0 ? (
+              <EmptyState
+                size="sm"
+                icon={<PieChart size={24} />}
+                title="No category data"
+                description="Expense transactions will be grouped and shown here."
+              />
+            ) : (
+              insights.categoryBreakdown.map((cat, idx) => (
+                <div
+                  key={cat.category}
+                  className="flex items-center gap-2 py-2.5 px-1 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors rounded-lg"
+                >
+                  {/* Color dot + Category name */}
+                  <div className="flex items-center gap-2 w-[120px] sm:w-[140px] flex-shrink-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: getCategoryColor(cat.category) }}
+                    />
+                    <span className="text-sm text-primary truncate">
+                      {cat.category}
+                    </span>
+                  </div>
+  
+                  {/* Amount — fixed width */}
+                  <span className="font-mono text-sm text-secondary w-[90px] flex-shrink-0">
+                    {formatINR(cat.total)}
+                  </span>
+  
+                  {/* Progress bar — hidden on mobile, visible sm+ */}
+                  <div className="hidden sm:flex flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: trackColor }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${cat.percentage}%` }}
+                      transition={{ duration: 0.6, delay: 0.5 + idx * 0.05, ease: 'easeOut' }}
+                      style={{ backgroundColor: getCategoryColor(cat.category) }}
+                    />
+                  </div>
+  
+                  {/* Percentage — always visible, right-aligned */}
+                  <span className="font-mono text-sm text-secondary flex-shrink-0 ml-auto">
+                    {cat.percentage}%
+                  </span>
                 </div>
-
-                {/* Total */}
-                <span className="font-mono text-sm text-primary font-medium">
-                  {formatINR(cat.total)}
-                </span>
-
-                {/* Progress bar */}
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${cat.percentage}%` }}
-                    transition={{ duration: 0.6, delay: 0.5 + idx * 0.05, ease: 'easeOut' }}
-                    style={{ backgroundColor: getCategoryColor(cat.category) }}
-                  />
-                </div>
-
-                {/* Percentage */}
-                <span className="font-mono text-xs text-secondary text-right">
-                  {cat.percentage}%
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </GlassCard>
 

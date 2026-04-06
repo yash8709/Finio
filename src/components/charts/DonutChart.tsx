@@ -102,19 +102,20 @@ export function DonutChart({ data, title, subtitle }: DonutChartProps) {
       </div>
 
       {/* Legend */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-6 px-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-4 px-2">
         {data.slice(0, 8).map((entry) => (
-          <div key={entry.category} className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full shrink-0"
+          <div key={entry.category} 
+            className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: getCategoryColor(entry.category) }}
             />
-            <div className="flex justify-between w-full min-w-0">
-              <span className="text-xs text-secondary truncate mr-2">
-                {entry.category.length > 12 ? entry.category.split(' ')[0] : entry.category}
-              </span>
-              <span className="text-xs text-primary tabular-nums">{entry.percentage}%</span>
-            </div>
+            <span className="text-xs text-secondary truncate">
+              {entry.category}
+            </span>
+            <span className="text-xs font-mono text-primary tabular-nums flex-shrink-0 ml-auto">
+              {entry.percentage}%
+            </span>
           </div>
         ))}
       </div>

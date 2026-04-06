@@ -15,9 +15,11 @@ import {
   Store,
   Tag,
   IndianRupee,
+  SearchX,
 } from 'lucide-react'
 import { subDays } from 'date-fns'
 import { GlassCard } from '../components/ui/GlassCard'
+import { EmptyState } from '../components/ui/EmptyState'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -310,7 +312,7 @@ export function Transactions() {
       transition={{ duration: 0.2, ease: 'easeOut' }}
     >
       {/* ─── Filter Preset Chips ──────────────────────── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
         {filterPresets.map((preset) => {
           const isActive = activePreset === preset.id
           return (
@@ -347,9 +349,9 @@ export function Transactions() {
 
       {/* ─── Controls Bar ──────────────────────────────── */}
       <GlassCard className="p-4 sticky top-16 z-10">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
-          <div className="flex-1 min-w-[200px] max-w-[320px]">
+          <div className="w-full sm:flex-1">
             <Input
               placeholder="Search transactions..."
               value={filters.search}
@@ -357,6 +359,9 @@ export function Transactions() {
               icon={Search}
             />
           </div>
+          
+          <div className="flex gap-2 flex-shrink-0 flex-wrap justify-between w-full sm:w-auto">
+            <div className="flex items-center gap-2">
 
           {/* Filters toggle */}
           <Button
@@ -393,41 +398,48 @@ export function Transactions() {
             />
           </Button>
 
-          <div className="flex-1" />
-
-          {/* Admin / Export actions */}
-          <div className="relative group flex items-center">
-            <div className={role !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Download}
-                onClick={role === 'admin' ? handleExportCSV : undefined}
-                className={role !== 'admin' ? 'pointer-events-none' : ''}
-              >
-                Export CSV
-              </Button>
             </div>
-            {role !== 'admin' && (
-              <div className="absolute top-[120%] right-0 mt-1 px-3 py-1.5 rounded-lg bg-[#080D1A] border border-white/10 text-xs text-secondary opacity-0 group-hover:opacity-100 transition-duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
-                Only admins can export data
-              </div>
-            )}
-          </div>
 
-          {role === 'admin' && (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={Plus}
-              onClick={() => {
-                resetForm()
-                toggleDrawer()
-              }}
-            >
-              Add Transaction
-            </Button>
-          )}
+            <div className="hidden sm:block sm:flex-1" />
+
+            {/* Admin / Export actions */}
+            <div className="flex items-center gap-2">
+              <div className="relative group flex items-center">
+                <div className={role !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Download}
+                    onClick={role === 'admin' ? handleExportCSV : undefined}
+                    className={role !== 'admin' ? 'pointer-events-none' : ''}
+                  >
+                    <span className="hidden sm:inline">Export CSV</span>
+                    <span className="sm:hidden">Export</span>
+                  </Button>
+                </div>
+                {role !== 'admin' && (
+                  <div className="absolute top-[120%] right-0 mt-1 px-3 py-1.5 rounded-lg bg-[#080D1A] border border-white/10 text-xs text-secondary opacity-0 group-hover:opacity-100 transition-duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                    Only admins can export data
+                  </div>
+                )}
+              </div>
+
+              {role === 'admin' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => {
+                    resetForm()
+                    toggleDrawer()
+                  }}
+                >
+                  <span className="hidden sm:inline">Add Transaction</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ─── Collapsible Filter Panel ──────────────── */}
@@ -559,19 +571,30 @@ export function Transactions() {
       {/* ─── Transactions Table ────────────────────────── */}
       {filteredCount === 0 ? (
         /* Empty state */
-        <GlassCard className="p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <Search size={24} className="text-secondary" />
-          </div>
-          <h3 className="text-lg font-medium text-secondary mb-1">No transactions found</h3>
-          <p className="text-sm text-secondary">
-            Try adjusting your filters or search query.
-          </p>
-          {activeFilterCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="mt-4">
-              Clear all filters
-            </Button>
-          )}
+        <GlassCard className="rounded-2xl">
+          <EmptyState
+            size="md"
+            icon={<SearchX size={28} />}
+            title="No transactions found"
+            description={
+              activePreset === 'anomalies'
+                ? "No unusual spending detected. Your transactions look consistent."
+                : activePreset === 'last-7-days'
+                ? "No transactions in the last 7 days."
+                : activePreset === 'high-expenses'
+                ? "No transactions above ₹5,000 found."
+                : activePreset === 'subscriptions'
+                ? "No subscription transactions found."
+                : activeFilterCount > 0
+                ? "No results match your current filters. Try adjusting or clearing them."
+                : "No transactions match your search. Try different keywords."
+            }
+            action={
+              activeFilterCount > 0
+                ? { label: "Clear all filters", onClick: resetFilters }
+                : undefined
+            }
+          />
         </GlassCard>
       ) : (
         <GlassCard className="overflow-hidden">
@@ -711,70 +734,83 @@ export function Transactions() {
           </div>
 
           {/* ─── Mobile Card List (hidden on desktop) ─────── */}
-          <div className="md:hidden divide-y divide-white/[0.04]">
-            {paginatedTransactions.map((t) => (
-              <div key={t.id} className="p-4">
-                {/* Row 1: merchant + amount */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar name={t.merchant} size="sm" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-primary truncate">
-                        {t.merchant}
-                      </p>
-                      <p className="text-xs text-muted">
-                        {formatDate(t.date, 'dd MMM yyyy')}
-                      </p>
-                    </div>
+          <div className="md:hidden space-y-3 mt-2">
+            {paginatedTransactions.map((tx) => (
+              <motion.div
+                key={tx.id}
+                className="glass-card p-4 rounded-2xl"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Row 1: Avatar + Merchant + Amount */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-shrink-0">
+                    <Avatar name={tx.merchant} size="sm" />
                   </div>
-                  <span className={`font-mono text-sm font-semibold shrink-0 ml-3 ${
-                    t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                  }`}>
-                    {t.type === 'income' ? '+' : '-'}{formatINR(t.amount)}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-primary truncate">
+                      {tx.merchant}
+                    </p>
+                    <p className="text-xs text-muted mt-0.5">
+                      {formatDate(tx.date, 'dd MMM yyyy · hh:mm a')}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className={`font-mono text-sm font-bold ${
+                      tx.type === 'income' 
+                        ? 'text-[#10B981]' 
+                        : 'text-[#FB7185]'
+                    }`}>
+                      {tx.type === 'income' ? '+' : '−'}
+                      {formatINR(tx.amount)}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Row 2: category badge + admin actions */}
+                {/* Row 2: Category badge + Admin actions */}
                 <div className="flex items-center justify-between">
-                  <Badge label={t.category.split('&')[0].trim()} category={t.category} size="sm" />
+                  <span className="category-badge text-xs">
+                    {tx.category.split('&')[0].trim()}
+                  </span>
                   {role === 'admin' && (
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => {
-                          setFormAmount(t.amount.toString())
-                          setFormMerchant(t.merchant)
-                          setFormCategory(t.category)
-                          setFormType(t.type)
-                          setFormDate(formatDate(t.date, 'yyyy-MM-dd'))
-                          setFormDescription(t.description)
+                          setFormAmount(tx.amount.toString())
+                          setFormMerchant(tx.merchant)
+                          setFormCategory(tx.category)
+                          setFormType(tx.type)
+                          setFormDate(formatDate(tx.date, 'yyyy-MM-dd'))
+                          setFormDescription(tx.description)
                           toggleDrawer()
                         }}
-                        className="text-xs text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                        className="text-xs text-secondary hover:text-primary transition-colors cursor-pointer"
                       >
-                        <Pencil size={14} />
+                        Edit
                       </button>
                       <button
-                        onClick={() => deleteTransaction(t.id)}
-                        className="text-xs text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-all"
+                        onClick={() => deleteTransaction(tx.id)}
+                        className="text-xs text-[#FB7185] hover:text-red-400 transition-colors cursor-pointer"
                       >
-                        <Trash2 size={14} />
+                        Delete
                       </button>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* ─── Pagination ────────────────────────────── */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-white/6">
-              <p className="text-xs text-secondary">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-white/6 mt-4 gap-2">
+              <p className="text-xs text-secondary hidden sm:block">
                 Page <span className="font-mono text-secondary">{currentPage}</span> of{' '}
                 <span className="font-mono text-secondary">{totalPages}</span>
               </p>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 mx-auto sm:mx-0">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
@@ -782,10 +818,14 @@ export function Transactions() {
                 >
                   <ChevronLeft size={16} />
                 </button>
+                
+                <span className="text-xs text-secondary px-2 sm:hidden">
+                  {currentPage} / {totalPages}
+                </span>
 
                 {pageNumbers.map((page, i) =>
                   page === '...' ? (
-                    <span key={`ellipsis-${i}`} className="px-2 text-secondary text-sm">
+                    <span key={`ellipsis-${i}`} className="px-2 text-secondary text-sm hidden sm:block">
                       …
                     </span>
                   ) : (
@@ -793,7 +833,7 @@ export function Transactions() {
                       key={page}
                       onClick={() => setCurrentPage(page)}
                       className={`
-                        w-8 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer
+                        hidden sm:block w-8 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer
                         ${currentPage === page
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                           : 'text-secondary hover:text-primary hover:bg-white/5'
