@@ -39,6 +39,15 @@ const rowVariants = {
 }
 
 
+// ─── Greeting subline (time-of-day aware) ────────────────
+const getGreetingSubline = () => {
+  const hour = new Date().getHours()
+  const month = new Date().toLocaleString('default', { month: 'long' })
+
+  if (hour < 12) return `Good morning — here's your ${month} overview`
+  if (hour < 17) return `Good afternoon — here's your ${month} overview`
+  return `Good evening — here's your ${month} overview`
+}
 
 // ─── Dashboard Page ──────────────────────────────────────
 export function Dashboard() {
@@ -254,6 +263,21 @@ export function Dashboard() {
       animate="animate"
       exit="exit"
     >
+      {/* ─── Welcome Message ─────────────────────────── */}
+      <motion.div
+        className="mb-4 md:mb-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <h2 className="text-xl md:text-2xl font-bold text-primary" style={{ fontFamily: 'Sora' }}>
+          Welcome back, Yash 👋
+        </h2>
+        <p className="text-sm text-secondary mt-0.5">
+          {getGreetingSubline()}
+        </p>
+      </motion.div>
+
       {/* ─── Smart Banner ────────────────────────────── */}
       <SmartBanner banner={bannerState} />
 
