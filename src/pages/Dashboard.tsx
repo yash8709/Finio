@@ -38,14 +38,7 @@ const rowVariants = {
   show: { opacity: 1, x: 0, transition: { duration: 0.2, ease: 'easeOut' } },
 }
 
-function getCategoryColor(category: string): 'emerald' | 'amber' | 'rose' | 'indigo' | 'slate' {
-  const c = category.toLowerCase()
-  if (c.includes('food') || c.includes('dining')) return 'amber'
-  if (c.includes('transport')) return 'indigo'
-  if (c.includes('health')) return 'emerald'
-  if (c.includes('shopping')) return 'rose'
-  return 'slate'
-}
+
 
 // ─── Dashboard Page ──────────────────────────────────────
 export function Dashboard() {
@@ -422,9 +415,8 @@ export function Dashboard() {
                   </p>
                 </div>
                 
-                {/* Category badge — hidden on mobile to save space */}
                 <div className="hidden sm:block flex-shrink-0">
-                  <Badge label={t.category.split(' ')[0]} color={getCategoryColor(t.category)} />
+                  <Badge label={t.category.split('&')[0].trim()} category={t.category} size="sm" />
                 </div>
                 
                 {/* Amount — fixed width, right aligned, never shrinks */}
