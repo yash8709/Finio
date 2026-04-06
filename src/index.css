@@ -3,6 +3,15 @@
 
 /* ─── DARK MODE (default) ─────────────────────────────── */
 :root {
+  /* Z-index stack — global hierarchy */
+  --z-content:   0;
+  --z-sticky:    20;
+  --z-navbar:    30;
+  --z-backdrop:  40;
+  --z-sidebar:   50;
+  --z-drawer:    60;
+  --z-modal:     70;
+
   --bg-base:         #080D1A;
   --bg-card:         rgba(255, 255, 255, 0.04);
   --bg-card-hover:   rgba(255, 255, 255, 0.07);
@@ -21,7 +30,7 @@
   --glow-emerald:    rgba(16, 185, 129, 0.12);
   --glow-violet:     rgba(139, 92, 246, 0.06);
   --sidebar-bg:      rgba(255, 255, 255, 0.03);
-  --navbar-bg:       rgba(8, 13, 26, 0.8);
+  --navbar-bg:       rgba(8, 13, 26, 0.97);
   --input-bg:        rgba(255, 255, 255, 0.05);
   --input-border:    rgba(255, 255, 255, 0.08);
   --input-focus-bg:  rgba(255, 255, 255, 0.07);
@@ -53,7 +62,7 @@
   --glow-emerald:    rgba(5, 150, 105, 0.04);
   --glow-violet:     rgba(139, 92, 246, 0.02);
   --sidebar-bg:      rgba(255, 255, 255, 0.9);
-  --navbar-bg:       rgba(240, 244, 248, 0.9);
+  --navbar-bg:       rgba(240, 244, 248, 0.98);
   --input-bg:        rgba(0, 0, 0, 0.04);
   --input-border:    rgba(0, 0, 0, 0.1);
   --input-focus-bg:  rgba(0, 0, 0, 0.06);
@@ -69,13 +78,22 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   font-family: 'Sora', sans-serif;
   background-color: var(--bg-base);
   color: var(--text-primary);
   margin: 0;
   padding: 0;
+}
+
+#root {
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Scrollbar */
@@ -126,9 +144,10 @@ body {
 
 /* ─── Navbar glass ───────────────────────────────────── */
 .glass-navbar {
+  z-index: var(--z-navbar);
   background: var(--navbar-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-card);
 }
 
@@ -195,3 +214,15 @@ input:focus-visible {
 
 /* ─── Theme-aware divider ────────────────────────────── */
 .border-theme { border-color: var(--divider); }
+
+/* ─── Hide scrollbar on mobile ───────────────────────── */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
+
+  * {
+    scrollbar-width: none;
+  }
+}
