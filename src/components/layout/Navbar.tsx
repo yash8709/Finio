@@ -17,7 +17,6 @@ export function Navbar() {
   const {
     isDarkMode,
     toggleDarkMode,
-    isSidebarExpanded,
     toggleSidebar,
   } = useUIStore()
   const { search } = useTransactionStore((s) => s.filters)
@@ -26,31 +25,36 @@ export function Navbar() {
   const location = useLocation()
   const pageTitle = PAGE_TITLES[location.pathname] || 'Dashboard'
 
-  const leftPosition = isMobile ? 0 : isSidebarExpanded ? 240 : 72
-
   return (
     <header
+      className="glass-navbar h-16 flex items-center justify-between transition-all duration-300 ease-in-out w-full"
       style={{
-        left: leftPosition,
+        paddingLeft: isMobile ? '12px' : '24px',
+        paddingRight: isMobile ? '12px' : '24px',
       }}
-      className="glass-navbar fixed top-0 right-0 h-16 z-20 flex items-center justify-between px-4 lg:px-6 transition-[left] duration-300 ease-in-out"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — mobile only */}
         {isMobile && (
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg transition-all cursor-pointer"
+            className="flex-shrink-0 p-2 -ml-1 rounded-xl transition-colors cursor-pointer"
             style={{ color: 'var(--text-muted)' }}
           >
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
         )}
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{pageTitle}</h2>
+        <h2
+          className="text-base md:text-lg font-semibold truncate"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {pageTitle}
+        </h2>
       </div>
 
       {/* ─── Right section ────────────────────────────── */}
-      <div className="flex items-center gap-1 md:gap-3">
-        {/* Search */}
+      <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
+        {/* Search — desktop only */}
         <div className="relative hidden md:block">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
           <input
@@ -79,11 +83,10 @@ export function Navbar() {
           {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
-        {/* User info — primary identity location */}
-        <div className="flex items-center gap-2.5 pl-3" style={{ borderLeft: '1px solid var(--divider)' }}>
-          <div className="text-right hidden sm:block">
+        {/* User info — hide name/ID on mobile, keep avatar */}
+        <div className="flex items-center gap-2.5 pl-2 md:pl-3" style={{ borderLeft: '1px solid var(--divider)' }}>
+          <div className="text-right hidden md:block">
             <p className="text-sm font-medium leading-tight" style={{ color: 'var(--text-primary)' }}>{MOCK_USER.name}</p>
-            <p className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>{MOCK_USER.id}</p>
           </div>
           <Avatar name={MOCK_USER.name} size="md" />
         </div>

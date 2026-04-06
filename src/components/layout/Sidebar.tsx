@@ -27,63 +27,66 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const { isSidebarExpanded, toggleSidebar, setSidebarExpanded } = useUIStore()
+  const location = useLocation()
 
   const isTablet = useMediaQuery('(max-width: 1024px)')
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   // Collapse sidebar on tablet, expand on desktop
   useEffect(() => {
-    if (isTablet) {
+    if (isMobile) {
+      setSidebarExpanded(false)
+    } else if (isTablet) {
       setSidebarExpanded(false)
     } else {
       setSidebarExpanded(true)
     }
-  }, [isTablet, setSidebarExpanded])
+  }, [isTablet, isMobile, setSidebarExpanded])
 
-  // Mobile sidebar is an overlay
-  if (isMobile) {
-    return (
-      <>
-        {isSidebarExpanded && (
-          <div
-            className="fixed inset-0 bg-black/60 z-30"
-            onClick={toggleSidebar}
-          />
-        )}
-        <aside
-          className={`
-            fixed top-0 left-0 h-screen z-40
-            glass-sidebar
-            flex flex-col
-            transition-transform duration-300 ease-out
-            ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}
-            w-60
-          `}
-        >
-          {/* Sidebar content is the same, just wrapped */}
-          <SidebarContent />
-        </aside>
-      </>
-    )
-  }
+  // Close sidebar on route change (mobile only)
+  useEffect(() => {
+    if (isMobile && isSidebarExpanded) {
+      setSidebarExpanded(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
 
   return (
-    <aside
-      className={`
-        fixed top-0 left-0 h-screen z-30
-        glass-sidebar
-        flex flex-col
-        transition-all duration-300 ease-out
-        ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}
-      `}
-    >
-      <SidebarContent />
-    </aside>
+    <>
+      {/* Backdrop — mobile only */}
+      {isMobile && isSidebarExpanded && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={toggleSidebar}
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.70)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+
+      {/* Sidebar panel */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen z-50
+          glass-sidebar
+          flex flex-col
+          transition-all duration-300 ease-out
+          ${isMobile
+            ? `w-[260px] ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}`
+            : `translate-x-0 ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}`
+          }
+        `}
+      >
+        <SidebarContent isMobile={isMobile} />
+      </aside>
+    </>
   )
 }
 
 // Extracted content to reuse for mobile/desktop
-function SidebarContent() {
+function SidebarContent({ isMobile }: { isMobile: boolean }) {
   const location = useLocation()
   const {
     isSidebarExpanded,
@@ -92,6 +95,9 @@ function SidebarContent() {
     setRole,
   } = useUIStore()
 
+  // On mobile the sidebar is always "expanded" style when open
+  const showExpanded = isMobile ? true : isSidebarExpanded
+
   return (
     <>
       {/* ─── Logo + Branding ──────────────────────────── */}
@@ -99,7 +105,7 @@ function SidebarContent() {
         <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
           <Sparkles size={18} className="text-white" />
         </div>
-        {isSidebarExpanded && (
+        {showExpanded && (
           <div className="overflow-hidden">
             <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Finio</h1>
             <span className="text-[10px] font-medium uppercase tracking-widest text-emerald-400">
@@ -120,7 +126,7 @@ function SidebarContent() {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center ${isSidebarExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'} py-2.5 rounded-lg mx-2
+                flex items-center ${showExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'} py-2.5 rounded-lg mx-2
                 transition-colors duration-200 group relative
                 border-l-[3px]
                 ${
@@ -136,11 +142,11 @@ function SidebarContent() {
                 className={`shrink-0 ${isActive ? 'text-emerald-400' : ''}`}
               />
 
-              {isSidebarExpanded && (
+              {showExpanded && (
                 <span className="text-sm font-medium">{item.label}</span>
               )}
 
-              {!isSidebarExpanded && (
+              {!showExpanded && (
                 <div className="absolute left-full rounded-md px-2 py-1 ml-6 bg-emerald-950 text-emerald-300 text-sm invisible opacity-20 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0">
                   {item.label}
                 </div>
@@ -153,7 +159,7 @@ function SidebarContent() {
       {/* ─── Sidebar Footer ─────────────────────────────── */}
       <div className="flex flex-col gap-3 p-2" style={{ borderTop: '1px solid var(--divider)' }}>
         {/* ─── Role Switcher ────────────────────────────── */}
-        {isSidebarExpanded && (
+        {showExpanded && (
           <div className="flex items-center justify-center">
             <div className="p-1 rounded-lg flex" style={{ background: 'var(--input-bg)', color: 'var(--text-muted)' }}>
               <button
@@ -178,7 +184,7 @@ function SidebarContent() {
 
         {/* ─── User Profile (avatar only — identity is in navbar) ── */}
         <div className={`flex items-center p-3 border-t border-theme ${
-          isSidebarExpanded ? 'justify-start' : 'justify-center'
+          showExpanded ? 'justify-start' : 'justify-center'
         }`}>
           <Avatar
             name={MOCK_USER.name}
@@ -186,13 +192,15 @@ function SidebarContent() {
           />
         </div>
 
-        {/* ─── Collapse Toggle ──────────────────────────── */}
-        <button
-          onClick={toggleSidebar}
-          className="absolute -right-3 top-16 p-1.5 rounded-full bg-emerald-500/50 hover:bg-emerald-500 text-white cursor-pointer"
-        >
-          {isSidebarExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
+        {/* ─── Collapse Toggle — desktop/tablet only ──── */}
+        {!isMobile && (
+          <button
+            onClick={toggleSidebar}
+            className="absolute -right-3 top-16 p-1.5 rounded-full bg-emerald-500/50 hover:bg-emerald-500 text-white cursor-pointer"
+          >
+            {isSidebarExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
+        )}
       </div>
     </>
   )

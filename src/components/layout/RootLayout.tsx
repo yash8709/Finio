@@ -6,6 +6,7 @@ import { useUIStore } from '../../store/uiStore'
 import { useTransactionStore } from '../../store/transactionStore'
 import { mockTransactions } from '../../data/mockData'
 import { useEffect, useRef } from 'react'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 const SIDEBAR_EXPANDED = 240
 const SIDEBAR_COLLAPSED = 72
@@ -21,6 +22,7 @@ export function RootLayout() {
   } = useUIStore()
   
   const { setTransactions } = useTransactionStore()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   
   // Initialize mock data ONCE
   const initialized = useRef(false)
@@ -32,9 +34,11 @@ export function RootLayout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
-  const sidebarWidth = isSidebarExpanded 
-    ? SIDEBAR_EXPANDED 
-    : SIDEBAR_COLLAPSED
+  const sidebarWidth = isMobile
+    ? 0
+    : isSidebarExpanded 
+      ? SIDEBAR_EXPANDED 
+      : SIDEBAR_COLLAPSED
 
   // Glow blob opacities — dimmer in light mode
   const glowIndigo = isDarkMode
@@ -101,12 +105,7 @@ export function RootLayout() {
       </div>
       
       {/* Sidebar */}
-      <div style={{ position: 'fixed', 
-        left: 0, top: 0, 
-        height: '100vh', 
-        zIndex: 50 }}>
-        <Sidebar />
-      </div>
+      <Sidebar />
       
       {/* Main content */}
       <div style={{
@@ -116,6 +115,8 @@ export function RootLayout() {
         transition: 'margin-left 300ms ease',
         position: 'relative',
         zIndex: 1,
+        width: isMobile ? '100%' : 'auto',
+        overflowX: 'hidden',
       }}>
         {/* Navbar */}
         <div style={{
@@ -138,7 +139,7 @@ export function RootLayout() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="sticky top-0 z-30 flex items-center justify-between px-6 py-2 text-xs"
+              className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 py-2 text-xs"
               style={{
                 background: 'rgba(245,158,11,0.08)',
                 borderBottom: '1px solid rgba(245,158,11,0.2)',
@@ -156,7 +157,7 @@ export function RootLayout() {
         </AnimatePresence>
         
         {/* Page content */}
-        <main className="p-6">
+        <main className="p-4 md:p-6">
           <Outlet />
         </main>
       </div>
