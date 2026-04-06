@@ -54,9 +54,11 @@ export function Sidebar() {
   return (
     <>
       {/* Backdrop — mobile only */}
-      {isMobile && isSidebarExpanded && (
+      {isMobile && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
+            isSidebarExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
           onClick={toggleSidebar}
         />
       )}
@@ -65,10 +67,14 @@ export function Sidebar() {
       <aside
         className={`
           fixed top-0 left-0 h-full z-50
-          flex flex-col
-          transition-all duration-300 ease-in-out
+          flex flex-col transform
+          transition-all duration-300
+          ${isMobile 
+            ? 'ease-[cubic-bezier(0.22,1,0.36,1)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]' 
+            : 'ease-in-out'
+          }
           ${isMobile
-            ? `w-[85%] max-w-[280px] bg-[#0B1220] backdrop-blur-none border-r border-white/10 ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}`
+            ? `w-[85%] max-w-[280px] bg-[#0B1220] backdrop-blur-none border-r border-white/10 ${isSidebarExpanded ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`
             : `glass-sidebar translate-x-0 ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}`
           }
         `}
@@ -95,13 +101,16 @@ function SidebarContent({ isMobile }: { isMobile: boolean }) {
   return (
     <>
       {/* ─── Logo + Branding ──────────────────────────── */}
-      <div className="p-4 flex items-center gap-3 h-16" style={{ borderBottom: '1px solid var(--divider)' }}>
+      <div 
+        className={isMobile ? "px-4 py-4 border-b border-white/10 flex items-center gap-3 shrink-0" : "p-4 flex items-center gap-3 h-16"} 
+        style={!isMobile ? { borderBottom: '1px solid var(--divider)' } : undefined}
+      >
         <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
           <Sparkles size={18} className="text-white" />
         </div>
         {showExpanded && (
           <div className="overflow-hidden">
-            <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Finio</h1>
+            <h1 className="text-lg font-bold tracking-tight" style={isMobile ? { color: 'white' } : { color: 'var(--text-primary)' }}>Finio</h1>
             <span className="text-[10px] font-medium uppercase tracking-widest text-emerald-400">
               {role}
             </span>
@@ -110,7 +119,7 @@ function SidebarContent({ isMobile }: { isMobile: boolean }) {
       </div>
 
       {/* ─── Navigation ───────────────────────────────── */}
-      <nav className="flex-1 py-4 space-y-1">
+      <nav className={isMobile ? "flex-1 px-4 py-4 space-y-3 overflow-y-auto" : "flex-1 py-4 space-y-1"}>
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname.startsWith(item.path)
           const Icon = item.icon
@@ -119,21 +128,33 @@ function SidebarContent({ isMobile }: { isMobile: boolean }) {
             <Link
               key={item.path}
               to={item.path}
-              className={`
-                flex items-center ${showExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'} py-2.5 rounded-lg mx-2
-                transition-colors duration-200 group relative
-                border-l-[3px]
-                ${
-                  isActive
-                    ? 'bg-emerald-500/10 border-emerald-500'
-                    : 'border-transparent hover:bg-white/[0.04]'
-                }
-              `}
-              style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-muted)' }}
+              className={
+                isMobile
+                  ? `
+                      flex items-center gap-3 px-4 py-3 rounded-lg mx-2 transition-all duration-200 group relative border-l-[3px]
+                      ${isActive 
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500' 
+                          : 'text-white/90 hover:text-white hover:bg-white/10 active:bg-white/15 border-transparent'
+                       }
+                    `
+                  : `
+                      flex items-center ${showExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'} py-2.5 rounded-lg mx-2
+                      transition-colors duration-200 group relative border-l-[3px]
+                      ${isActive
+                          ? 'bg-emerald-500/10 border-emerald-500'
+                          : 'border-transparent hover:bg-white/[0.04]'
+                      }
+                    `
+              }
+              style={!isMobile ? { color: isActive ? 'var(--text-primary)' : 'var(--text-muted)' } : undefined}
             >
               <Icon
                 size={20}
-                className={`shrink-0 ${isActive ? 'text-emerald-400' : ''}`}
+                className={`shrink-0 ${
+                  isMobile
+                    ? (isActive ? 'text-emerald-400' : 'text-white/70 group-hover:text-white')
+                    : (isActive ? 'text-emerald-400' : '')
+                }`}
               />
 
               {showExpanded && (
@@ -151,40 +172,47 @@ function SidebarContent({ isMobile }: { isMobile: boolean }) {
       </nav>
 
       {/* ─── Sidebar Footer ─────────────────────────────── */}
-      <div className="flex flex-col gap-3 p-2" style={{ borderTop: '1px solid var(--divider)' }}>
+      <div 
+        className={isMobile ? "px-4 py-5 border-t border-white/10 shrink-0" : "flex flex-col gap-3 p-2"} 
+        style={!isMobile ? { borderTop: '1px solid var(--divider)' } : undefined}
+      >
         {/* ─── Role Switcher ────────────────────────────── */}
         {showExpanded && (
-          <div className="flex items-center justify-center">
-            <div className="p-1 rounded-lg flex" style={{ background: 'var(--input-bg)', color: 'var(--text-muted)' }}>
+          <div className={isMobile ? "w-full flex items-center justify-between bg-white/5 rounded-lg p-2" : "flex items-center justify-center p-1 rounded-lg bg-[var(--input-bg)] text-[var(--text-muted)]"}>
               <button
                 onClick={() => setRole('admin')}
-                className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                  role === 'admin' ? 'bg-emerald-500/15 text-emerald-400' : ''
+                className={`flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isMobile 
+                    ? `flex-1 justify-center py-2 rounded-md ${role === 'admin' ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'text-white/60 hover:text-white'}`
+                    : `p-1.5 rounded-md text-xs ${role === 'admin' ? 'bg-emerald-500/15 text-emerald-400' : ''}`
                 }`}
               >
                 <Users size={14} /> Admin
               </button>
               <button
                 onClick={() => setRole('viewer')}
-                className={`p-1.5 rounded-md text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                  role === 'viewer' ? 'bg-emerald-500/15 text-emerald-400' : ''
+                className={`flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isMobile 
+                    ? `flex-1 justify-center py-2 rounded-md ${role === 'viewer' ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'text-white/60 hover:text-white'}`
+                    : `p-1.5 rounded-md text-xs ${role === 'viewer' ? 'bg-emerald-500/15 text-emerald-400' : ''}`
                 }`}
               >
                 <Users size={14} /> Viewer
               </button>
-            </div>
           </div>
         )}
 
         {/* ─── User Profile (avatar only — identity is in navbar) ── */}
-        <div className={`flex items-center p-3 border-t border-theme ${
-          showExpanded ? 'justify-start' : 'justify-center'
-        }`}>
-          <Avatar
-            name={MOCK_USER.name}
-            size="sm"
-          />
-        </div>
+        {!isMobile && (
+          <div className={`flex items-center p-3 border-t border-theme ${
+            showExpanded ? 'justify-start' : 'justify-center'
+          }`}>
+            <Avatar
+              name={MOCK_USER.name}
+              size="sm"
+            />
+          </div>
+        )}
 
         {/* ─── Collapse Toggle — desktop/tablet only ──── */}
         {!isMobile && (
