@@ -18,7 +18,8 @@ export function RootLayout() {
     isDarkMode,
     role, 
     isViewerBannerDismissed,
-    dismissViewerBanner 
+    dismissViewerBanner,
+    setRole
   } = useUIStore()
   
   const { setTransactions } = useTransactionStore()
@@ -139,17 +140,29 @@ export function RootLayout() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 py-2 text-xs"
+              className="fixed right-0 z-[35] flex items-center justify-between px-4 md:px-6 py-2 text-xs"
               style={{
+                top: NAVBAR_HEIGHT,
+                left: sidebarWidth,
                 background: 'rgba(245,158,11,0.08)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 borderBottom: '1px solid rgba(245,158,11,0.2)',
+                transition: 'left 300ms ease',
               }}>
-              <span className="text-amber-300">
-                👁 You are in Viewer mode. Switch to Admin to make changes.
-              </span>
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="text-amber-300">
+                  ⚠️ You're in Viewer mode — read only access.
+                </span>
+                <button 
+                  onClick={() => setRole('admin')}
+                  className="text-emerald-400 hover:text-emerald-300 font-medium ml-1 underline decoration-emerald-400/30">
+                  Switch to Admin
+                </button>
+              </div>
               <button 
                 onClick={dismissViewerBanner}
-                className="text-amber-400 hover:text-amber-200 ml-4">
+                className="text-amber-400 hover:text-amber-200 ml-4 p-1 text-base leading-none">
                 ×
               </button>
             </motion.div>

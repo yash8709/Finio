@@ -5,7 +5,7 @@ import { MOCK_USER } from '../../data/mockData'
 import { Avatar } from '../ui/Avatar'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -23,6 +23,7 @@ export function Navbar() {
   const setFilter = useTransactionStore((s) => s.setFilter)
   const isMobile = useMediaQuery('(max-width: 768px)')
   const location = useLocation()
+  const navigate = useNavigate()
   const pageTitle = PAGE_TITLES[location.pathname] || 'Dashboard'
 
   return (
@@ -61,7 +62,12 @@ export function Navbar() {
             type="text"
             value={search}
             onChange={(e) => setFilter({ search: e.target.value })}
-            placeholder="Search analytics..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && search.trim() !== '') {
+                navigate('/transactions')
+              }
+            }}
+            placeholder="Search transactions..."
             className="glass-input w-52 text-sm pl-9 pr-3 py-1.5"
           />
         </div>
