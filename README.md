@@ -10,7 +10,8 @@
 
 ## Preview
 
-![Finio Dashboard](./public/preview.png)
+![Finio Dashboard Demo](./public/demo.gif)
+![Finio Dashboard Static Preview](./public/preview.png)
 
 > Toggle between **Admin** and **Viewer** roles, switch dark/light mode, 
 > and explore 90 realistic Indian financial transactions.
