@@ -56,26 +56,20 @@ export function Sidebar() {
       {/* Backdrop — mobile only */}
       {isMobile && isSidebarExpanded && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={toggleSidebar}
-          style={{
-            backgroundColor: 'rgba(0,0,0,0.70)',
-            backdropFilter: 'blur(2px)',
-            WebkitBackdropFilter: 'blur(2px)',
-          }}
         />
       )}
 
       {/* Sidebar panel */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen z-50
-          glass-sidebar
+          fixed top-0 left-0 h-full z-50
           flex flex-col
-          transition-all duration-300 ease-out
+          transition-all duration-300 ease-in-out
           ${isMobile
-            ? `w-[260px] ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}`
-            : `translate-x-0 ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}`
+            ? `w-[85%] max-w-[280px] bg-[#0B1220] backdrop-blur-none border-r border-white/10 ${isSidebarExpanded ? 'translate-x-0' : '-translate-x-full'}`
+            : `glass-sidebar translate-x-0 ${isSidebarExpanded ? 'w-60' : 'w-[72px]'}`
           }
         `}
       >
