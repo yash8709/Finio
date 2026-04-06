@@ -167,7 +167,7 @@ export function Insights() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <GlassCard className="p-6">
+        <GlassCard className="p-4 md:p-6">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="p-2 rounded-xl" style={{ background: `${healthScore.color}1A` }}>
               <ShieldCheck className="w-5 h-5" style={{ color: healthScore.color }} />
@@ -180,9 +180,9 @@ export function Insights() {
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8 items-center">
+          <div className="flex flex-col md:flex-row gap-6 items-center">
             {/* Left — Large Gauge */}
-            <div className="flex flex-col items-center lg:min-w-[280px] shrink-0">
+            <div className="flex flex-col items-center justify-center md:justify-start lg:min-w-[280px] shrink-0">
               <HealthScoreGauge data={healthScore} size="large" />
               <div className="mt-2 flex items-center gap-2">
                 <span
@@ -278,7 +278,7 @@ export function Insights() {
 
           return (
             <motion.div key={insight.id} variants={cardVariant} className="flex flex-col h-full">
-              <div className="glass-card p-5 h-full flex flex-col">
+              <div className="glass-card p-4 md:p-5 h-full flex flex-col">
                 {/* Top row: icon + trend badge */}
                 <div className="flex items-center justify-between mb-3">
                   <div
@@ -350,8 +350,8 @@ export function Insights() {
         transition={{ duration: 0.4, delay: 0.4 }}
       >
         {/* Left — Category Distribution */}
-        <GlassCard className="p-6">
-          <h3 className="text-lg font-semibold text-primary mb-1">Category Distribution</h3>
+        <GlassCard className="p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold text-primary mb-1">Category Distribution</h3>
           <p className="text-xs text-secondary uppercase tracking-widest mb-6">
             Expense breakdown by category
           </p>
@@ -426,8 +426,8 @@ export function Insights() {
 
         {/* Right — Insights Alerts */}
         <div className="space-y-4">
-          <GlassCard className="p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Insights Alerts</h3>
+          <GlassCard className="p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold text-primary mb-4">Insights Alerts</h3>
 
             <div className="space-y-3">
               {insights.anomalies.slice(0, 3).map((anomaly, i) => (
@@ -471,7 +471,7 @@ export function Insights() {
           </GlassCard>
 
           {/* Pro-tip Card */}
-          <GlassCard className="p-5 border border-emerald-500/15 bg-emerald-500/[0.03]">
+          <GlassCard className="p-4 md:p-5 border border-emerald-500/15 bg-emerald-500/[0.03]">
             <div className="flex items-center gap-2 mb-2">
               <Lightbulb size={14} className="text-emerald-400" />
               <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold">
@@ -499,14 +499,18 @@ export function Insights() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.5 }}
       >
-        <GlassCard className="p-6">
+        <GlassCard className="p-4 md:p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-primary">Spending Activity</h3>
+            <h3 className="text-base md:text-lg font-semibold text-primary">Spending Activity</h3>
             <p className="text-xs text-secondary uppercase tracking-widest mt-0.5">
               Last 6 weeks
             </p>
           </div>
-          <SpendingHeatmap transactions={transactions} />
+          <div className="overflow-x-auto scrollbar-none">
+            <div style={{ minWidth: 320 }}>
+              <SpendingHeatmap transactions={transactions} />
+            </div>
+          </div>
         </GlassCard>
       </motion.div>
     </motion.div>
