@@ -141,7 +141,7 @@ export function Dashboard() {
   }, [transactions])
 
   const card1 = (
-    <div className="glass-card p-5 relative overflow-hidden h-full flex flex-col justify-between min-w-0">
+    <div className="glass-card p-4 md:p-5 relative overflow-hidden h-full flex flex-col justify-between min-w-0 w-full">
       <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
         style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
       <div>
@@ -283,7 +283,7 @@ export function Dashboard() {
 
       {/* ─── Summary Cards ──────────────────────────── */}
       <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 w-full"
         variants={{
           hidden: {},
           show: { transition: { staggerChildren: 0.08 }}
@@ -308,7 +308,7 @@ export function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.32, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="col-span-2 lg:col-span-4 glass-card p-5 relative overflow-hidden">
+        <div className="col-span-1 sm:col-span-2 lg:col-span-4 glass-card p-4 md:p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
             style={{ background: `radial-gradient(circle, ${healthScore.color} 0%, transparent 70%)`, transform: 'translate(30%, -30%)' }} />
 
@@ -363,14 +363,14 @@ export function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
       >
-        <div className="flex-[3] w-full h-[380px] min-h-[380px] lg:h-auto lg:min-h-0">
+        <div className="flex-[3] w-full h-[260px] min-h-[260px] md:h-[380px] md:min-h-[380px] lg:h-auto lg:min-h-0">
           <AreaChart
             data={insights.monthlyData}
             title="Balance Trend"
             subtitle="Financial trajectory overview"
           />
         </div>
-        <div className="flex-[2] w-full h-[380px] min-h-[380px] lg:h-auto lg:min-h-0">
+        <div className="flex-[2] w-full h-[260px] min-h-[260px] md:h-[380px] md:min-h-[380px] lg:h-auto lg:min-h-0">
           <DonutChart
             data={insights.categoryBreakdown}
             title="Spending Breakdown"
