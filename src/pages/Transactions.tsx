@@ -311,47 +311,61 @@ export function Transactions() {
       exit="exit"
       transition={{ duration: 0.2, ease: 'easeOut' }}
     >
-      {/* ─── Filter Preset Chips ──────────────────────── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
-        {filterPresets.map((preset) => {
-          const isActive = activePreset === preset.id
-          return (
-            <button
-              key={preset.id}
-              onClick={() => handlePresetClick(preset)}
-              title={preset.description}
-              className={`
-                glass-card px-3 py-1.5 rounded-full text-xs cursor-pointer whitespace-nowrap
-                flex items-center gap-1.5 transition-all duration-200
-                ${isActive
-                  ? 'border border-[#10B981] text-[#10B981]'
-                  : 'text-secondary hover:border-white/20 hover:text-primary'
-                }
-              `}
-            >
-              {preset.label}
-              {isActive && (
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setActivePreset(null)
-                    resetFilters()
-                  }}
-                  className="ml-0.5 p-0.5 rounded-full hover:bg-white/10 transition-colors"
-                >
-                  <X size={10} />
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      {/* ─── Sticky Filter Bar ───────────────────────── */}
+      <div
+        className="sticky z-20"
+        style={{
+          top: 64,
+          background: 'var(--bg-base)',
+          paddingTop: '10px',
+          paddingBottom: '10px',
+          borderBottom: '1px solid var(--border-card)',
+          marginLeft: '-16px',
+          marginRight: '-16px',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+        }}
+      >
+        {/* ─── Filter Preset Chips ──────────────────────── */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {filterPresets.map((preset) => {
+            const isActive = activePreset === preset.id
+            return (
+              <button
+                key={preset.id}
+                onClick={() => handlePresetClick(preset)}
+                title={preset.description}
+                className={`
+                  glass-card px-3 py-1.5 rounded-full text-xs cursor-pointer whitespace-nowrap
+                  flex items-center gap-1.5 transition-all duration-200 flex-shrink-0
+                  ${isActive
+                    ? 'border border-[#10B981] text-[#10B981]'
+                    : 'text-secondary hover:border-white/20 hover:text-primary'
+                  }
+                `}
+              >
+                {preset.label}
+                {isActive && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActivePreset(null)
+                      resetFilters()
+                    }}
+                    className="ml-0.5 p-0.5 rounded-full hover:bg-white/10 transition-colors"
+                  >
+                    <X size={10} />
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
 
-      {/* ─── Controls Bar ──────────────────────────────── */}
-      <GlassCard className="p-4 sticky top-16 z-10">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="w-full sm:flex-1">
+        {/* ─── Controls Bar ──────────────────────────────── */}
+        <div className="flex flex-col gap-2 mt-2">
+          {/* Row 1: Search full width */}
+          <div className="w-full">
             <Input
               placeholder="Search transactions..."
               value={filters.search}
@@ -359,86 +373,79 @@ export function Transactions() {
               icon={Search}
             />
           </div>
-          
-          <div className="flex gap-2 flex-shrink-0 flex-wrap justify-between w-full sm:w-auto">
-            <div className="flex items-center gap-2">
 
-          {/* Filters toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={SlidersHorizontal}
-            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-          >
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-primary text-[10px] flex items-center justify-center font-bold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
+          {/* Row 2: Filters + Sort + Export + Add */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={SlidersHorizontal}
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            >
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-1 w-5 h-5 rounded-full bg-emerald-500 text-primary text-[10px] flex items-center justify-center font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
 
-          {/* Sort by date toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              setFilter({
-                sortBy: 'date',
-                sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc',
-              })
-            }
-          >
-            Sort by Date
-            <ChevronDown
-              size={14}
-              className={`transition-transform duration-200 ${
-                filters.sortOrder === 'asc' ? 'rotate-180' : ''
-              }`}
-            />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setFilter({
+                  sortBy: 'date',
+                  sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc',
+                })
+              }
+            >
+              Sort by Date
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${
+                  filters.sortOrder === 'asc' ? 'rotate-180' : ''
+                }`}
+              />
+            </Button>
 
-            </div>
+            <div className="flex-1" />
 
-            <div className="hidden sm:block sm:flex-1" />
-
-            {/* Admin / Export actions */}
-            <div className="flex items-center gap-2">
-              <div className="relative group flex items-center">
-                <div className={role !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Download}
-                    onClick={role === 'admin' ? handleExportCSV : undefined}
-                    className={role !== 'admin' ? 'pointer-events-none' : ''}
-                  >
-                    <span className="hidden sm:inline">Export CSV</span>
-                    <span className="sm:hidden">Export</span>
-                  </Button>
-                </div>
-                {role !== 'admin' && (
-                  <div className="absolute top-[120%] right-0 mt-1 px-3 py-1.5 rounded-lg bg-[#080D1A] border border-white/10 text-xs text-secondary opacity-0 group-hover:opacity-100 transition-duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
-                    Only admins can export data
-                  </div>
-                )}
-              </div>
-
-              {role === 'admin' && (
+            <div className="relative group flex items-center flex-shrink-0">
+              <div className={role !== 'admin' ? 'opacity-50 cursor-not-allowed' : ''}>
                 <Button
-                  variant="primary"
+                  variant="ghost"
                   size="sm"
-                  icon={Plus}
-                  onClick={() => {
-                    resetForm()
-                    toggleDrawer()
-                  }}
+                  icon={Download}
+                  onClick={role === 'admin' ? handleExportCSV : undefined}
+                  className={role !== 'admin' ? 'pointer-events-none' : ''}
                 >
-                  <span className="hidden sm:inline">Add Transaction</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">Export CSV</span>
+                  <span className="sm:hidden">Export</span>
                 </Button>
+              </div>
+              {role !== 'admin' && (
+                <div className="absolute top-[120%] right-0 mt-1 px-3 py-1.5 rounded-lg bg-[#080D1A] border border-white/10 text-xs text-secondary opacity-0 group-hover:opacity-100 transition-duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                  Only admins can export data
+                </div>
               )}
             </div>
+
+            {role === 'admin' && (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Plus}
+                onClick={() => {
+                  resetForm()
+                  toggleDrawer()
+                }}
+                className="flex-shrink-0"
+              >
+                <span className="hidden sm:inline">Add Transaction</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -560,7 +567,7 @@ export function Transactions() {
             )}
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {/* ─── Transaction Count ─────────────────────────── */}
       <p className="text-xs text-secondary">
