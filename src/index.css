@@ -215,14 +215,46 @@ input:focus-visible {
 /* ─── Theme-aware divider ────────────────────────────── */
 .border-theme { border-color: var(--divider); }
 
-/* ─── Hide scrollbar on mobile ───────────────────────── */
+/* Phase 7: Mobile Global Overflows & Touch Targets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.glass-card {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ─── Mobile specific fixes ───────────────────────── */
 @media (max-width: 767px) {
+  button {
+    min-height: 36px;
+  }
+  
+  /* Nav links in sidebar */
+  nav a, nav button {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
   ::-webkit-scrollbar {
+    display: none;
     width: 0;
-    background: transparent;
   }
 
   * {
+    -ms-overflow-style: none;
     scrollbar-width: none;
   }
 }

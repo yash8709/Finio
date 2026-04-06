@@ -110,7 +110,7 @@ export function RootLayout() {
       {/* Main content */}
       <div style={{
         marginLeft: sidebarWidth,
-        paddingTop: NAVBAR_HEIGHT,
+        paddingTop: 0,
         minHeight: '100vh',
         transition: 'margin-left 300ms ease',
         position: 'relative',
@@ -157,7 +157,7 @@ export function RootLayout() {
         </AnimatePresence>
         
         {/* Page content */}
-        <main className="p-4 md:p-6">
+        <main className="w-full">
           <Outlet />
         </main>
       </div>

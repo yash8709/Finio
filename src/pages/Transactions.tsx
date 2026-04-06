@@ -304,7 +304,7 @@ export function Transactions() {
 
   return (
     <motion.div
-      className="space-y-4"
+      className="space-y-4 pt-16 px-3 md:px-6 pb-8 min-h-screen"
       variants={pageVariants}
       initial="initial"
       animate="animate"

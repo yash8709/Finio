@@ -257,7 +257,7 @@ export function Dashboard() {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-6 pt-16 px-3 md:px-6 pb-8 min-h-screen"
       variants={pageVariants}
       initial="initial"
       animate="animate"
