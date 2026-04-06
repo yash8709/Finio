@@ -8,9 +8,14 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite)
 
-## Preview
+## 🚀 Demo
 
+### Live Interaction Preview
 ![Finio Dashboard Demo](./public/demo.gif)
+
+## 🖼️ Preview
+
+### Full Dashboard View
 ![Finio Dashboard Static Preview](./public/preview.png)
 
 > Toggle between **Admin** and **Viewer** roles, switch dark/light mode, 
